@@ -1,0 +1,17 @@
+syntax = "proto2";
+
+package com.roomreservation.collection;
+
+option java_multiple_files = true;
+option java_package = "com.roomreservation.protobuf.protos";
+option java_outer_classname = "RequestObjectProtos";
+
+message RequestObject {
+  required string action = 1;
+  optional string bookingId = 2;
+  optional string date = 3;
+  optional string campusName = 4;
+  optional int32 roomNumber = 5;
+  optional string timeslot = 6;
+  optional string identifier = 7;
+}

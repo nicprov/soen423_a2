@@ -1,0 +1,15 @@
+syntax = "proto2";
+
+package com.roomreservation.collection;
+
+option java_multiple_files = true;
+option java_package = "com.roomreservation.protobuf.protos";
+option java_outer_classname = "ResponseObjectProtos";
+
+message ResponseObject {
+  required string message = 1;
+  required string dateTime = 2;
+  required string requestType = 3;
+  required string requestParameters = 4;
+  required bool status = 5;
+}

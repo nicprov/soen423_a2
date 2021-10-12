@@ -1,0 +1,17 @@
+syntax = "proto2";
+
+package com.roomreservation.collection;
+
+option java_multiple_files = true;
+option java_package = "com.roomreservation.protobuf.protos";
+option java_outer_classname = "CentralRepositoryProtos";
+
+message CentralRepository {
+  optional string action = 1;
+  optional string host = 3;
+  optional int32 port = 4;
+  optional string path = 5;
+  optional string campus = 6;
+  optional string type = 7;
+  optional bool status = 8;
+}
