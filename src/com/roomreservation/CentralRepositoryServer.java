@@ -36,8 +36,8 @@ public class CentralRepositoryServer {
             // Initialize with udp and rmi as types
             usedPorts = new ArrayList<>();
             repository = new LinkedPositionalList<>();
-            repository.addFirst(new Node<>("udp", new LinkedPositionalList<>()));
-            repository.addFirst(new Node<>("rmi", new LinkedPositionalList<>()));
+            //repository.addFirst(new Node<>("udp", new LinkedPositionalList<>()));
+            //repository.addFirst(new Node<>("rmi", new LinkedPositionalList<>()));
 
             while (true){
                 DatagramPacket datagramPacket = new DatagramPacket(buffer, buffer.length);
@@ -45,6 +45,7 @@ public class CentralRepositoryServer {
 
                 // Launch a new thread for each request
                 DatagramSocket finalDatagramSocket = datagramSocket;
+                /*
                 Thread thread = new Thread(() -> {
                     try {
                         handleUDPRequest(finalDatagramSocket, datagramPacket);
@@ -52,7 +53,7 @@ public class CentralRepositoryServer {
                         System.out.println(ANSI_RED + "Exception: " + e.getMessage() + RESET);
                     }
                 });
-                thread.start();
+                thread.start();*/
             }
         } catch (SocketException e){
             System.out.println("Socket: " + e.getMessage());

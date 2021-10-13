@@ -2,19 +2,20 @@ package com.roomreservation;
 
 import com.roomreservation.common.Campus;
 import com.roomreservation.common.CentralRepositoryUtils;
-import com.roomreservation.common.Parsing;
-import com.roomreservation.common.RMIResponse;
 import com.roomreservation.protobuf.protos.*;
+import org.omg.CORBA.ORB;
+import org.omg.CosNaming.NameComponent;
+import org.omg.CosNaming.NamingContextExt;
+import org.omg.CosNaming.NamingContextExtHelper;
+import org.omg.PortableServer.POA;
+import org.omg.PortableServer.POAHelper;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.SocketException;
-import java.rmi.Naming;
-import java.rmi.registry.LocateRegistry;
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -22,13 +23,12 @@ import static com.roomreservation.common.ConsoleColours.*;
 
 public class Server {
 
-    private static RoomReservation roomReservation;
 
     public static void main(String[] args) {
         try {
             if (args.length <= 1) {
                 Campus campus = getCampus(args[0]);
-                startRMIServer(campus);
+                startCorbaServer(campus);
                 startUDPServer(campus); // For internal communication between servers
             } else {
                 System.err.println("Please only specify one parameter");
@@ -41,37 +41,44 @@ public class Server {
         }
     }
 
-    /**
-     * Starts RMI server to start receiving RMI requests
-     * @param campus Campus name (dvl, wst, kkl)
-     * @throws IOException Exception
-     */
-    private static void startRMIServer(Campus campus) throws IOException {
-        String registryURL;
-        roomReservation = new RoomReservation(campus);
+    private static void startCorbaServer(Campus campus){
+        try {
+            Properties props = new Properties();
+            props.put("org.omg.CORBA.ORBInitialHost", "localhost");
+            props.put("org.omg.CORBA.ORBInitialPort", "8050");
+            String[] newArgs = new String[0];
+            // create and initialize the ORB
+            ORB orb = ORB.init(newArgs, props);
+            // get reference to rootpoa & activate the POAManager
+            POA rootpoa = POAHelper.narrow(orb.resolve_initial_references("RootPOA"));
+            rootpoa.the_POAManager().activate();
 
-        // Lookup server to see if it is already registered
-        int remotePort;
-        CentralRepository centralRepository = CentralRepositoryUtils.lookupServer(campus.toString(), "rmi");
-        if (centralRepository != null && centralRepository.getStatus()){
-            remotePort = centralRepository.getPort();
-        } else {
-            // Get a new port if not
-            remotePort = CentralRepositoryUtils.getServerPort();
-            if (remotePort == -1){
-                System.out.println(ANSI_RED + "Unable to get available port, central repository may be down" + RESET);
-                System.exit(1);
-            }
-            if (!CentralRepositoryUtils.registerServer(campus.toString(), "rmi", remotePort)){
-                System.out.println(ANSI_RED + "Unable to register server, central repository may be down" + RESET);
-                System.exit(1);
-            }
+            // create servant and register it with the ORB
+            RoomReservationImpl roomReservation = new RoomReservationImpl();
+            roomReservation.setORB(orb);
+
+            // get object reference from the servant
+            org.omg.CORBA.Object ref = rootpoa.servant_to_reference(roomReservation);
+            RoomReservationApp.RoomReservation href = RoomReservationApp.RoomReservationHelper.narrow(ref);
+
+            // get the root naming context
+            // NameService invokes the name service
+            org.omg.CORBA.Object objRef = orb.string_to_object("corbaloc::localhost:8050/NameService"); // InvalidName
+            // Use NamingContextExt which is part of the Interoperable Naming Service (INS) specification.
+            NamingContextExt ncRef = NamingContextExtHelper.narrow(objRef);
+            // bind the Object Reference in Naming
+            String name = "Authentication";
+            NameComponent path[] = ncRef.to_name(name);
+            ncRef.rebind(path, href);
+            System.out.println("Authentication ready and waiting ...");
+
+            // wait for invocations from clients
+            orb.run();
+        } catch (Exception e) {
+            System.err.println("ERROR: " + e);
+            e.printStackTrace(System.out);
         }
-        registryURL = "rmi://" + CentralRepositoryUtils.SERVER_HOST + ":" + remotePort + "/" + CentralRepositoryUtils.SERVER_PATH;
-        LocateRegistry.createRegistry(remotePort);
-        printWelcome(campus);
-        Naming.rebind(registryURL, roomReservation);
-        System.out.println("RMI Server ready (port: " + remotePort + ")");
+            System.out.println("HelloServer Exiting ...");
     }
 
     /**
@@ -107,6 +114,7 @@ public class Server {
 
                 // Launch a new thread for each request
                 DatagramSocket finalDatagramSocket = datagramSocket;
+                /*
                 Thread thread = new Thread(() -> {
                     try {
                         handleUDPRequest(finalDatagramSocket, datagramPacket);
@@ -114,7 +122,7 @@ public class Server {
                         System.out.println(ANSI_RED + "Exception: " + e.getMessage() + RESET);
                     }
                 });
-                thread.start();
+                thread.start();*/
             }
         }
         catch (SocketException e){
@@ -149,7 +157,8 @@ public class Server {
         // Build response object
         ResponseObject responseObject;
         ResponseObject.Builder tempObject;
-
+        responseObject = ResponseObject.newBuilder().build();
+        /*
         // Perform action
         SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MM-yyyy");
         switch (RequestObjectAction.valueOf(requestObject.getAction())){
@@ -184,7 +193,7 @@ public class Server {
                 tempObject.setStatus(false);
                 responseObject = tempObject.build();
                 break;
-        }
+        }*/
         // Encode response object
         byte[] response = responseObject.toByteArray();
         DatagramPacket reply = new DatagramPacket(response, response.length, datagramPacket.getAddress(), datagramPacket.getPort());

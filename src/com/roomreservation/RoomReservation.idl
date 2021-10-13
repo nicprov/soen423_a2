@@ -1,0 +1,22 @@
+module RoomReservationApp{
+    struct RMIResponse {
+        string message;
+        string date;
+        string requestType;
+        string requestParameters;
+        boolean status;
+    };
+    enum Campus {DVL, KKL, WST};
+    typedef sequence <string> listOfTimeSlots;
+    interface RoomReservation{
+        /* Admin role */
+        RMIResponse createRoom(in short roomNumber, in string date, in listOfTimeSlots timeslots);
+        RMIResponse deleteRoom(in short roomNumber, in string date, in listOfTimeSlots timeslots);
+
+        /* Student role */
+        RMIResponse bookRoom(in string identifier, in Campus campusName, in short roomNumber, in string date, in string timeslot);
+        RMIResponse getAvailableTimeSlot(in string date);
+        RMIResponse cancelBooking(in string identifier, in string bookingId);
+        oneway void shutdown();
+    };
+};
