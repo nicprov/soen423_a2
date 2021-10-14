@@ -2,9 +2,11 @@
 
 ## To generate proto files:
 
-> protoc -I=. --java_out=. udpRequest.proto
+> protoc -I=. --java_out=. requestObject.proto
 
-> protoc -I=. --java_out=. udpResponse.proto
+> protoc -I=. --java_out=. responseObject.proto
+
+> protoc -I=. --java_out=. centralRepository.proto
 
 ## To run IDLJ
 > /usr/lib/jvm/jdk1.7.0_80/bin/idlj -td src/com/roomreservation -fall src/com/roomreservation/RoomReservation.idl
