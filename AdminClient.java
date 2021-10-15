@@ -1,8 +1,11 @@
 import RoomReservationApp.RMIResponse;
+import common.CentralRepositoryUtils;
 import common.Parsing;
 import org.omg.CORBA.ORB;
 import org.omg.CosNaming.NamingContextExt;
 import org.omg.CosNaming.NamingContextExtHelper;
+import protobuf.protos.CentralRepository;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -24,20 +27,21 @@ public class AdminClient {
         BufferedReader bufferedReader = new BufferedReader(is);
         try {
             identifier = getIdentifier(bufferedReader);
-            ORB orb = ORB.init(args, null);
-            org.omg.CORBA.Object objRef = orb.string_to_object("corbaloc::localhost:8050/NameService");
-            NamingContextExt ncRef = NamingContextExtHelper.narrow(objRef);
-            roomReservation = RoomReservationApp.RoomReservationHelper.narrow(ncRef.resolve_str("RoomReservation"));
-            System.out.println("Obtained a handle on server object");
-            /*
-            CentralRepository centralRepository = CentralRepositoryUtils.lookupServer(identifier.substring(0, 3), "rmi");
+            CentralRepository centralRepository = CentralRepositoryUtils.lookupServer(identifier.substring(0, 3), "corba");
             if (centralRepository == null || !centralRepository.getStatus()){
                 System.out.println("Unable to lookup server with central repository");
                 System.exit(1);
             }
-            registryURL = "rmi://" + centralRepository.getHost() + ":" + centralRepository.getPort() + "/" + centralRepository.getPath();
-            logFilePath = "log/client/" + identifier + ".csv";
-            Logger.initializeLog(logFilePath);*/
+            int port = centralRepository.getPort();
+            ORB orb = ORB.init(args, null);
+            org.omg.CORBA.Object objRef = orb.string_to_object("corbaloc::localhost:" + port + "/NameService");
+            NamingContextExt ncRef = NamingContextExtHelper.narrow(objRef);
+            roomReservation = RoomReservationApp.RoomReservationHelper.narrow(ncRef.resolve_str("RoomReservation"));
+            System.out.println("Obtained a handle on server object");
+
+            //registryURL = "rmi://" + centralRepository.getHost() + ":" + centralRepository.getPort() + "/" + centralRepository.getPath();
+            //logFilePath = "log/client/" + identifier + ".csv";
+            //Logger.initializeLog(logFilePath);*/
             startAdmin(bufferedReader);
         } catch (Exception e) {
             System.out.println(ANSI_RED + "Unable to start client: " + e.getMessage() + RESET);

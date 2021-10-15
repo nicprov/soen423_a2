@@ -294,7 +294,7 @@ public class RoomReservationImpl extends RoomReservationApp.RoomReservationPOA {
      * @param timeslot Timeslot
      * @return RMI response object
      */
-    private RMIResponse bookRoomOnCampus(String identifier, int roomNumber, String date, String timeslot) {
+    private RMIResponse bookRoomOnCampus(String identifier, short roomNumber, String date, String timeslot) {
         boolean isOverBookingCountLimit = false;
         boolean timeslotExist = false;
         boolean isBooked = false;
@@ -532,7 +532,7 @@ public class RoomReservationImpl extends RoomReservationApp.RoomReservationPOA {
      * @param datePosition Date position object
      * @return Room position in database
      */
-    private Position<Entry<Short, LinkedPositionalList<Entry<String, LinkedPositionalList<Entry<String, String>>>>>> findRoom(int roomNumber, Position<Entry<String, LinkedPositionalList<Entry<Short, LinkedPositionalList<Entry<String, LinkedPositionalList<Entry<String, String>>>>>>>> datePosition){
+    private Position<Entry<Short, LinkedPositionalList<Entry<String, LinkedPositionalList<Entry<String, String>>>>>> findRoom(short roomNumber, Position<Entry<String, LinkedPositionalList<Entry<Short, LinkedPositionalList<Entry<String, LinkedPositionalList<Entry<String, String>>>>>>>> datePosition){
         for (Position<Entry<Short, LinkedPositionalList<Entry<String, LinkedPositionalList<Entry<String, String>>>>>> roomNext : datePosition.getElement().getValue().positions()) {
             if (roomNext.getElement().getKey().equals(roomNumber))
                 return roomNext;
