@@ -46,7 +46,7 @@ public class CentralRepositoryUtils {
      * @param centralRepositoryRequest Central repository request object
      * @return Central repository response object
      */
-    public static CentralRepository udpTransfer(CentralRepository centralRepositoryRequest){
+    public synchronized static CentralRepository udpTransfer(CentralRepository centralRepositoryRequest){
         DatagramSocket datagramSocket = null;
         try {
             int remotePort = 1024;

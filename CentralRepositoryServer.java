@@ -21,8 +21,8 @@ public class CentralRepositoryServer {
     private static final int MIN_PORT = 1025;
     private static final int MAX_PORT = 65000;
 
-    private static LinkedPositionalList<Entry<String, LinkedPositionalList<Entry<String, LinkedPositionalList<Entry<String, String>>>>>> repository;
-    private static ArrayList<Integer> usedPorts;
+    private static volatile LinkedPositionalList<Entry<String, LinkedPositionalList<Entry<String, LinkedPositionalList<Entry<String, String>>>>>> repository;
+    private static volatile ArrayList<Integer> usedPorts;
 
     public static void main(String[] args){
         DatagramSocket datagramSocket = null;
@@ -35,7 +35,7 @@ public class CentralRepositoryServer {
             usedPorts = new ArrayList<>();
             repository = new LinkedPositionalList<>();
             repository.addFirst(new Node<>("udp", new LinkedPositionalList<>()));
-            repository.addFirst(new Node<>("rmi", new LinkedPositionalList<>()));
+            repository.addFirst(new Node<>("corba", new LinkedPositionalList<>()));
 
             while (true){
                 DatagramPacket datagramPacket = new DatagramPacket(buffer, buffer.length);
@@ -116,7 +116,7 @@ public class CentralRepositoryServer {
      * @param requestCentralRepository Central Repository Request object
      * @return Central Repository Response object
      */
-    private static CentralRepository addServer(CentralRepository requestCentralRepository){
+    private static synchronized CentralRepository addServer(CentralRepository requestCentralRepository){
         CentralRepository.Builder responseCentralRepository = CentralRepository.newBuilder();
         boolean status = false;
         for (Position<Entry<String, LinkedPositionalList<Entry<String, LinkedPositionalList<Entry<String, String>>>>>> typePosition: repository.positions()){
@@ -150,7 +150,7 @@ public class CentralRepositoryServer {
      * @param type Server type (rmi, udp)
      * @return Central repository response object
      */
-    private static CentralRepository getServer(String campus, String type){
+    private static synchronized CentralRepository getServer(String campus, String type){
         CentralRepository.Builder responseCentralRepository = CentralRepository.newBuilder();
         boolean found = false;
         for (Position<Entry<String, LinkedPositionalList<Entry<String, LinkedPositionalList<Entry<String, String>>>>>> typePosition: repository.positions()){
@@ -184,7 +184,7 @@ public class CentralRepositoryServer {
      * Processes get available port server action which dynamically allocates available ports
      * @return Random available port
      */
-    private static CentralRepository getAvailablePort(){
+    private static synchronized CentralRepository getAvailablePort(){
         int randomPort = randomNumberGenerator();
         while (usedPorts.contains(randomPort) && !testPort(randomPort))
             randomPort = randomNumberGenerator();
@@ -200,7 +200,7 @@ public class CentralRepositoryServer {
      * @param port Port number
      * @return True if port is free, False otherwise
      */
-    private static boolean testPort(int port){
+    private static synchronized boolean testPort(int port){
         ServerSocket socket = null;
         DatagramSocket datagramSocket = null;
         try {
