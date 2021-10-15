@@ -1,7 +1,5 @@
 package common;
 
-import RoomReservationApp.Campus;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.text.ParseException;
@@ -85,14 +83,14 @@ public class Parsing {
      * @return Validated campus enum object
      * @throws IOException Exception
      */
-    public static Campus getCampus(BufferedReader bufferedReader) throws IOException {
+    public static String getCampus(BufferedReader bufferedReader) throws IOException {
         System.out.print("Enter campus name (dvl, kkl, wst): ");
         Campus campus = Parsing.tryParseCampus(bufferedReader.readLine());
         while (campus == null){
             System.out.print(ANSI_RED + "Invalid campus, must be one of the following (dvl, kkl, wst): " + RESET);
             campus = Parsing.tryParseCampus(bufferedReader.readLine());
         }
-        return campus;
+        return campus.toString();
     }
 
     /**

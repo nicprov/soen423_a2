@@ -1,4 +1,4 @@
-import RoomReservationApp.Campus;
+import common.Campus;
 import RoomReservationApp.RMIResponse;
 import common.CentralRepositoryUtils;
 import protobuf.protos.*;
@@ -161,10 +161,10 @@ public class Server {
         SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MM-yyyy");
         switch (RequestObjectAction.valueOf(requestObject.getAction())){
             case GetAvailableTimeslots:
-                responseObject = toResponseObject(roomReservation.getAvailableTimeSlotOnCampus(dateFormat.parse(requestObject.getDate())));
+                responseObject = toResponseObject(roomReservation.getAvailableTimeSlotOnCampus(requestObject.getDate()));
                 break;
             case BookRoom:
-                responseObject = toResponseObject(roomReservation.bookRoom(requestObject.getIdentifier(), getCampus(requestObject.getCampusName()), (short) requestObject.getRoomNumber(), requestObject.getDate(), requestObject.getTimeslot()));
+                responseObject = toResponseObject(roomReservation.bookRoom(requestObject.getIdentifier(), requestObject.getCampusName(), (short) requestObject.getRoomNumber(), requestObject.getDate(), requestObject.getTimeslot()));
                 break;
             case CancelBooking:
                 responseObject = toResponseObject(roomReservation.cancelBooking(requestObject.getIdentifier(), requestObject.getBookingId()));

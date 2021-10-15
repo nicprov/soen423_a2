@@ -1,10 +1,11 @@
-import RoomReservationApp.Campus;
+import common.Campus;
 import RoomReservationApp.RMIResponse;
 import collection.Entry;
 import collection.LinkedPositionalList;
 import collection.Node;
 import collection.Position;
 import common.CentralRepositoryUtils;
+import common.Parsing;
 import org.omg.CORBA.ORB;
 import protobuf.protos.CentralRepository;
 import protobuf.protos.RequestObject;
@@ -43,7 +44,7 @@ public class RoomReservationImpl extends RoomReservationApp.RoomReservationPOA {
         this.dateFormat = new SimpleDateFormat("dd-MM-yyyy");
         //logFilePath = "log/server/" + this.campus.toString() + ".csv";
         //Logger.initializeLog(logFilePath);
-        //this.generateSampleData();
+        this.generateSampleData();
     }
 
     public void setORB(ORB orb) {
@@ -146,7 +147,7 @@ public class RoomReservationImpl extends RoomReservationApp.RoomReservationPOA {
     }
 
     @Override
-    public RMIResponse bookRoom(String identifier, Campus campusName, short roomNumber, String date, String timeslot) {
+    public RMIResponse bookRoom(String identifier, String campusName, short roomNumber, String date, String timeslot) {
         if (campus.equals(this.campus))
             return bookRoomOnCampus(identifier, roomNumber, date, timeslot);
         else {
@@ -233,7 +234,7 @@ public class RoomReservationImpl extends RoomReservationApp.RoomReservationPOA {
      * @param date Date
      * @return RMI response object
      */
-    public RMIResponse getAvailableTimeSlotOnCampus(Date date) {
+    public RMIResponse getAvailableTimeSlotOnCampus(String date) {
         int counter = 0;
         for (Position<Entry<String, LinkedPositionalList<Entry<Short, LinkedPositionalList<Entry<String, LinkedPositionalList<Entry<String, String>>>>>>>> dateNext : database.positions()) {
             for (Position<Entry<Short, LinkedPositionalList<Entry<String, LinkedPositionalList<Entry<String, String>>>>>> roomNext : dateNext.getElement().getValue().positions()) {
@@ -560,5 +561,16 @@ public class RoomReservationImpl extends RoomReservationApp.RoomReservationPOA {
         rmiResponse.requestType = responseObject.getRequestType();
         rmiResponse.date = responseObject.getDateTime();
         return rmiResponse;
+    }
+
+    /**
+     * Generates sample data in campus
+     */
+    private void generateSampleData(){
+        this.createRoom((short) 201, Parsing.tryParseDate("2021-01-01"), Parsing.tryParseTimeslotList("9:30-10:00"));
+        this.createRoom((short) 202, Parsing.tryParseDate("2021-01-02"), Parsing.tryParseTimeslotList("10:30-11:00"));
+        this.createRoom((short) 203, Parsing.tryParseDate("2021-01-03"), Parsing.tryParseTimeslotList("11:00-11:30"));
+        this.createRoom((short) 204, Parsing.tryParseDate("2021-01-04"), Parsing.tryParseTimeslotList("11:30-12:00"));
+        this.createRoom((short) 205, Parsing.tryParseDate("2021-01-05"), Parsing.tryParseTimeslotList("12:00-12:30"));
     }
 }
