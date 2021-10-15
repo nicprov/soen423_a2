@@ -20,6 +20,7 @@ import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static common.Campus.KKL;
 import static common.ConsoleColours.*;
 
 public class Server {
@@ -56,16 +57,12 @@ public class Server {
     private static void startCorbaServer(Campus campus){
         try {
             // Lookup server to see if it is already registered
-            int remotePort;
+            int remotePort = 0;
             CentralRepository centralRepository = CentralRepositoryUtils.lookupServer(campus.toString(), "corba");
             if (centralRepository != null && centralRepository.getStatus()) {
                 remotePort = centralRepository.getPort();
             } else {
-                remotePort = CentralRepositoryUtils.getServerPort();
-                if (remotePort == -1){
-                    System.out.println(ANSI_RED + "Unable to get available port, central repository may be down" + RESET);
-                    System.exit(1);
-                }
+                remotePort = getRemotePort(campus);
                 if (!CentralRepositoryUtils.registerServer(campus.toString(), "corba", remotePort)){
                     System.out.println(ANSI_RED + "Unable to register server, central repository may be down" + RESET);
                     System.exit(1);
@@ -73,7 +70,7 @@ public class Server {
             }
             Properties props = new Properties();
             props.put("org.omg.CORBA.ORBInitialHost", "localhost");
-            props.put("org.omg.CORBA.ORBInitialPort", String.valueOf(remotePort));
+            props.put("org.omg.CORBA.ORBInitialPort", remotePort);
             String[] newArgs = new String[0];
             ORB orb = ORB.init(newArgs, props);
             POA rootpoa = POAHelper.narrow(orb.resolve_initial_references("RootPOA"));
@@ -82,7 +79,7 @@ public class Server {
             roomReservation.setORB(orb);
             org.omg.CORBA.Object ref = rootpoa.servant_to_reference(roomReservation);
             RoomReservationApp.RoomReservation href = RoomReservationApp.RoomReservationHelper.narrow(ref);
-            org.omg.CORBA.Object objRef = orb.string_to_object("corbaloc::localhost:8050/NameService"); // InvalidName
+            org.omg.CORBA.Object objRef = orb.string_to_object("corbaloc::localhost:" + remotePort + "/NameService");
             NamingContextExt ncRef = NamingContextExtHelper.narrow(objRef);
             NameComponent path[] = ncRef.to_name("RoomReservation");
             ncRef.rebind(path, href);
@@ -230,7 +227,7 @@ public class Server {
             case "dvl":
                 return Campus.DVL;
             case "kkl":
-                return Campus.KKL;
+                return KKL;
             case "wst":
             default:
                 return Campus.WST;
@@ -255,5 +252,17 @@ public class Server {
         responseObject.setRequestParameters(rmiResponse.requestParameters);
         responseObject.setRequestType(rmiResponse.requestType);
         return responseObject.build();
+    }
+
+    private static int getRemotePort(Campus campus){
+        switch (campus){
+            case DVL:
+                return 1050;
+            case KKL:
+                return 1052;
+            case WST:
+            default:
+                return 1054;
+        }
     }
 }

@@ -165,6 +165,7 @@ public class RoomReservationImpl extends RoomReservationApp.RoomReservationPOA {
 
     @Override
     public RMIResponse getAvailableTimeSlot(String date) {
+        System.out.println("Received request for CAMPUS: " + this.campus);
         // Build new proto request object
         RequestObject.Builder requestObject = RequestObject.newBuilder();
         requestObject.setAction(RequestObjectAction.GetAvailableTimeslots.toString());
