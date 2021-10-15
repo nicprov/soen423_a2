@@ -1,4 +1,5 @@
 import RoomReservationApp.Campus;
+import RoomReservationApp.RMIResponse;
 import common.CentralRepositoryUtils;
 import protobuf.protos.*;
 import org.omg.CORBA.ORB;
@@ -13,6 +14,8 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.SocketException;
 import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -21,13 +24,24 @@ import static common.ConsoleColours.*;
 
 public class Server {
 
+    private static RoomReservationImpl roomReservation;
 
     public static void main(String[] args) {
         try {
             if (args.length <= 1) {
                 Campus campus = getCampus(args[0]);
-                startCorbaServer(campus);
-                startUDPServer(campus); // For internal communication between servers
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        startUDPServer(campus); // For internal communication between servers
+                    }
+                }).start();
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        startCorbaServer(campus);
+                    }
+                }).start();
             } else {
                 System.err.println("Please only specify one parameter");
                 System.exit(1);
@@ -48,7 +62,7 @@ public class Server {
             ORB orb = ORB.init(newArgs, props);
             POA rootpoa = POAHelper.narrow(orb.resolve_initial_references("RootPOA"));
             rootpoa.the_POAManager().activate();
-            RoomReservationImpl roomReservation = new RoomReservationImpl();
+            roomReservation = new RoomReservationImpl(campus);
             roomReservation.setORB(orb);
             org.omg.CORBA.Object ref = rootpoa.servant_to_reference(roomReservation);
             RoomReservationApp.RoomReservation href = RoomReservationApp.RoomReservationHelper.narrow(ref);
@@ -56,7 +70,7 @@ public class Server {
             NamingContextExt ncRef = NamingContextExtHelper.narrow(objRef);
             NameComponent path[] = ncRef.to_name("RoomReservation");
             ncRef.rebind(path, href);
-            System.out.println("Authentication ready and waiting ...");
+            System.out.println("Room reservation ready and waiting ...");
 
             // wait for invocations from clients
             orb.run();
@@ -100,7 +114,6 @@ public class Server {
 
                 // Launch a new thread for each request
                 DatagramSocket finalDatagramSocket = datagramSocket;
-                /*
                 Thread thread = new Thread(() -> {
                     try {
                         handleUDPRequest(finalDatagramSocket, datagramPacket);
@@ -108,7 +121,7 @@ public class Server {
                         System.out.println(ANSI_RED + "Exception: " + e.getMessage() + RESET);
                     }
                 });
-                thread.start();*/
+                thread.start();
             }
         }
         catch (SocketException e){
@@ -143,22 +156,21 @@ public class Server {
         // Build response object
         ResponseObject responseObject;
         ResponseObject.Builder tempObject;
-        responseObject = ResponseObject.newBuilder().build();
-        /*
+
         // Perform action
         SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MM-yyyy");
         switch (RequestObjectAction.valueOf(requestObject.getAction())){
             case GetAvailableTimeslots:
-                responseObject = new RMIResponse().toResponseObject(roomReservation.getAvailableTimeSlotOnCampus(dateFormat.parse(requestObject.getDate())));
+                responseObject = toResponseObject(roomReservation.getAvailableTimeSlotOnCampus(dateFormat.parse(requestObject.getDate())));
                 break;
             case BookRoom:
-                responseObject = new RMIResponse().toResponseObject(roomReservation.bookRoom(requestObject.getIdentifier(), Campus.valueOf(requestObject.getCampusName()), requestObject.getRoomNumber(), dateFormat.parse(requestObject.getDate()), requestObject.getTimeslot()));
+                responseObject = toResponseObject(roomReservation.bookRoom(requestObject.getIdentifier(), getCampus(requestObject.getCampusName()), (short) requestObject.getRoomNumber(), requestObject.getDate(), requestObject.getTimeslot()));
                 break;
             case CancelBooking:
-                responseObject = new RMIResponse().toResponseObject(roomReservation.cancelBooking(requestObject.getIdentifier(), requestObject.getBookingId()));
+                responseObject = toResponseObject(roomReservation.cancelBooking(requestObject.getIdentifier(), requestObject.getBookingId()));
                 break;
             case GetBookingCount:
-                responseObject = new RMIResponse().toResponseObject(roomReservation.getBookingCount(requestObject.getIdentifier(), dateFormat.parse(requestObject.getDate())));
+                responseObject = toResponseObject(roomReservation.getBookingCount(requestObject.getIdentifier(), dateFormat.parse(requestObject.getDate())));
                 break;
             case CreateRoom:
                 tempObject = ResponseObject.newBuilder();
@@ -179,7 +191,7 @@ public class Server {
                 tempObject.setStatus(false);
                 responseObject = tempObject.build();
                 break;
-        }*/
+        }
         // Encode response object
         byte[] response = responseObject.toByteArray();
         DatagramPacket reply = new DatagramPacket(response, response.length, datagramPacket.getAddress(), datagramPacket.getPort());
@@ -217,5 +229,15 @@ public class Server {
         System.out.println("==============================");
         System.out.println("Welcome to the " + campus.toString().toUpperCase() + " campus!");
         System.out.println("==============================");
+    }
+
+    private static ResponseObject toResponseObject(RMIResponse rmiResponse){
+        ResponseObject.Builder responseObject = ResponseObject.newBuilder();
+        responseObject.setStatus(rmiResponse.status);
+        responseObject.setDateTime(rmiResponse.date);
+        responseObject.setMessage(rmiResponse.message);
+        responseObject.setRequestParameters(rmiResponse.requestParameters);
+        responseObject.setRequestType(rmiResponse.requestType);
+        return responseObject.build();
     }
 }

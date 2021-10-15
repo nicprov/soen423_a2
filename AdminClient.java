@@ -7,8 +7,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.*;
-import java.rmi.NotBoundException;
-import java.rmi.RemoteException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import static common.ConsoleColours.*;
@@ -97,7 +95,7 @@ public class AdminClient {
      * @param bufferedReader Input buffer
      * @throws IOException Exception
      */
-    private static void startAdmin(BufferedReader bufferedReader) throws IOException, NotBoundException, InterruptedException {
+    private static void startAdmin(BufferedReader bufferedReader) throws IOException, InterruptedException {
         while (true) {
             String action = listAndGetActions(bufferedReader);
             switch (action){
@@ -119,12 +117,10 @@ public class AdminClient {
     /**
      * Calls remote createRoom method on server
      * @param bufferedReader Input buffer
-     * @throws RemoteException Exception
      * @throws MalformedURLException Exception
-     * @throws NotBoundException Exception
      * @throws InterruptedException Exception
      */
-    private static void createRoom(BufferedReader bufferedReader) throws RemoteException, MalformedURLException, NotBoundException, InterruptedException {
+    private static void createRoom(BufferedReader bufferedReader) throws MalformedURLException, InterruptedException {
         System.out.println("\nCREATE ROOM");
         System.out.println("-----------");
         try {
@@ -152,12 +148,10 @@ public class AdminClient {
     /**
      * Calls remote deleteRoom method on server
      * @param bufferedReader Input buffer
-     * @throws RemoteException Exception
      * @throws InterruptedException Exception
      * @throws MalformedURLException Exception
-     * @throws NotBoundException Exception
      */
-    private static void deleteRoom(BufferedReader bufferedReader) throws RemoteException, InterruptedException, MalformedURLException, NotBoundException {
+    private static void deleteRoom(BufferedReader bufferedReader) throws InterruptedException, MalformedURLException {
         System.out.println("\nDELETE ROOM");
         System.out.println("-----------");
         try {
