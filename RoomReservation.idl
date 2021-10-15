@@ -16,6 +16,7 @@ module RoomReservationApp{
         RMIResponse bookRoom(in string identifier, in string campusName, in short roomNumber, in string date, in string timeslot);
         RMIResponse getAvailableTimeSlot(in string date);
         RMIResponse cancelBooking(in string identifier, in string bookingId);
+        RMIResponse changeReservation(in string identifier, in string bookingId, in string newCampusName, in short newRoomNumber, in string newDate, in string newTimeslot);
         oneway void shutdown();
     };
 };

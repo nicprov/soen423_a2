@@ -218,6 +218,35 @@ public class RoomReservationImpl extends RoomReservationApp.RoomReservationPOA {
     }
 
     @Override
+    public RMIResponse changeReservation(String identifier, String bookingId, String newCampusName, short newRoomNumber, String newDate, String newTimeslot) {
+        // Cancel existing booking
+        RMIResponse cancelBooking = cancelBooking(identifier, bookingId);
+        String requestParameters = "Booking ID: " + bookingId + " | Campus Name: " + newCampusName + " | Room number: " + newRoomNumber + " | New date: " + newDate + " | Timeslot: " + newTimeslot;
+        if (cancelBooking.status){
+            // Create new booking
+            RMIResponse createBooking = bookRoom(identifier, newCampusName, newRoomNumber, newDate, newTimeslot);
+            if (createBooking.status){
+                RMIResponse response = new RMIResponse();
+                response.requestType = RequestObjectAction.ChangeReservation.toString();
+                response.requestParameters = requestParameters;
+                response.status = true;
+                // TODO get new booking id
+                response.message = "Successfully changed reservation, new booking ID:";
+                response.date = this.dateFormat.format(new Date());
+                return response;
+            } else {
+                createBooking.requestType = RequestObjectAction.ChangeReservation.toString();
+                createBooking.requestParameters = requestParameters;
+                return createBooking;
+            }
+        } else {
+            cancelBooking.requestType = RequestObjectAction.ChangeReservation.toString();
+            cancelBooking.requestParameters = requestParameters;
+            return cancelBooking;
+        }
+    }
+
+    @Override
     public void shutdown() {
         orb.shutdown(true);
     }

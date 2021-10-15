@@ -82,11 +82,12 @@ public class StudentClient {
         System.out.println("1. Book room");
         System.out.println("2. Get available time slots");
         System.out.println("3. Cancel booking");
-        System.out.println("4. Quit");
+        System.out.println("4. Change reservation");
+        System.out.println("5. Quit");
         System.out.print("Selection: ");
         action = bufferedReader.readLine().trim();
-        while (!action.equals("1") && !action.equals("2") && !action.equals("3") && !action.equals("4")) {
-            System.out.println(ANSI_RED + "Invalid selection! Must select a valid action (1, 2, 3, 4): " + RESET);
+        while (!action.equals("1") && !action.equals("2") && !action.equals("3") && !action.equals("4") && !action.equals("5")) {
+            System.out.println(ANSI_RED + "Invalid selection! Must select a valid action (1, 2, 3, 4, 5): " + RESET);
             action = bufferedReader.readLine().trim();
         }
         return action;
@@ -112,6 +113,9 @@ public class StudentClient {
                     cancelBooking(bufferedReader);
                     break;
                 case "4":
+                    changeReservation(bufferedReader);
+                    break;
+                case "5":
                 default:
                     System.out.println("Goodbye!");
                     System.exit(0);
@@ -191,6 +195,38 @@ public class StudentClient {
         System.out.println("-----------");
         try {
             RMIResponse response = roomReservation.cancelBooking(identifier, Parsing.getBookingId(bufferedReader));
+            if (response != null) {
+                if (response.status)
+                    System.out.println(ANSI_GREEN + response.message + RESET);
+                else
+                    System.out.println(ANSI_RED + response.message + RESET);
+                //Logger.log(logFilePath, response);
+            } else {
+                System.out.println(ANSI_RED + "Unable to connect to remote server" + RESET);
+            }
+//        } catch (ConnectException e) {
+//            System.out.println(ANSI_RED + "Unable to connect to remote server, retrying..." + RESET);
+//            Thread.sleep(1000);
+//            roomReservation = (RoomReservationInterface) Naming.lookup(registryURL);
+//            bookRoom(roomReservation, bufferedReader);
+//        }
+        } catch (IOException e) {
+            System.out.println(ANSI_RED + "Exception: " + e.getMessage() + RESET);
+        }
+    }
+
+    /**
+     * Performs change reservation action and calls remote RMI server
+     * @param bufferedReader Input buffer
+     * @throws InterruptedException Exception
+     */
+    private static void changeReservation(BufferedReader bufferedReader) throws InterruptedException {
+        System.out.println("\nCHANGE RESERVATION");
+        System.out.println("-----------");
+        try {
+            RMIResponse response = roomReservation.changeReservation(identifier, Parsing.getBookingId(bufferedReader),
+                    Parsing.getCampus(bufferedReader), Parsing.getRoomNumber(bufferedReader), Parsing.getDate(bufferedReader),
+                    Parsing.getTimeslot(bufferedReader));
             if (response != null) {
                 if (response.status)
                     System.out.println(ANSI_GREEN + response.message + RESET);
