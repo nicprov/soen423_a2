@@ -24,22 +24,30 @@ public class StudentClient {
         BufferedReader bufferedReader = new BufferedReader(is);
         try {
             identifier = getIdentifier(bufferedReader);
-            CentralRepository centralRepository = CentralRepositoryUtils.lookupServer(identifier.substring(0, 3), "corba");
-            if (centralRepository == null || !centralRepository.getStatus()){
-                System.out.println("Unable to lookup server with central repository");
-                System.exit(1);
-            }
-            int port = centralRepository.getPort();
-            ORB orb = ORB.init(args, null);
-            org.omg.CORBA.Object objRef = orb.string_to_object("corbaloc::localhost:" + port + "/NameService");
-            NamingContextExt ncRef = NamingContextExtHelper.narrow(objRef);
-            roomReservation = RoomReservationApp.RoomReservationHelper.narrow(ncRef.resolve_str("RoomReservation"));
+            connectCorba();
             System.out.println("Obtained a handle on server object");
             logFilePath = "log/client/" + identifier + ".csv";
             Logger.initializeLog(logFilePath);
             startStudent(bufferedReader);
         } catch (Exception e) {
             System.out.println(ANSI_RED + "Unable to start client: " + e.getMessage() + RESET);
+        }
+    }
+
+    private static void connectCorba() {
+        try {
+            CentralRepository centralRepository = CentralRepositoryUtils.lookupServer(identifier.substring(0, 3), "corba");
+            if (centralRepository == null || !centralRepository.getStatus()){
+                System.out.println("Unable to lookup server with central repository");
+                System.exit(1);
+            }
+            int port = centralRepository.getPort();
+            ORB orb = ORB.init( new String[0], null);
+            org.omg.CORBA.Object objRef = orb.string_to_object("corbaloc::localhost:" + port + "/NameService");
+            NamingContextExt ncRef = NamingContextExtHelper.narrow(objRef);
+            roomReservation = RoomReservationApp.RoomReservationHelper.narrow(ncRef.resolve_str("RoomReservation"));
+        } catch (Exception e){
+            System.out.println(ANSI_RED + "Unable to connect to corba: " + e.getMessage() + RESET);
         }
     }
 
@@ -143,12 +151,11 @@ public class StudentClient {
             } else {
                 System.out.println(ANSI_RED + "Unable to connect to remote server" + RESET);
             }
-//        } catch (ConnectException e) {
-//            System.out.println(ANSI_RED + "Unable to connect to remote server, retrying..." + RESET);
-//            Thread.sleep(1000);
-//            roomReservation = (RoomReservationInterface) Naming.lookup(registryURL);
-//            bookRoom(roomReservation, bufferedReader);
-//        }
+        } catch (org.omg.CORBA.TRANSIENT exception){
+            System.out.println(ANSI_RED + "Unable to connect to remote server, retrying..." + RESET);
+            Thread.sleep(1000);
+            connectCorba();
+            bookRoom(bufferedReader);
         } catch (IOException e) {
             System.out.println(ANSI_RED + "Exception: " + e.getMessage() + RESET);
         }
@@ -173,12 +180,11 @@ public class StudentClient {
             } else {
                 System.out.println(ANSI_RED + "Unable to connect to remote server" + RESET);
             }
-//        } catch (ConnectException e) {
-//            System.out.println(ANSI_RED + "Unable to connect to remote server, retrying..." + RESET);
-//            Thread.sleep(1000);
-//            roomReservation = (RoomReservationInterface) Naming.lookup(registryURL);
-//            bookRoom(roomReservation, bufferedReader);
-//        }
+        } catch (org.omg.CORBA.TRANSIENT exception){
+            System.out.println(ANSI_RED + "Unable to connect to remote server, retrying..." + RESET);
+            Thread.sleep(1000);
+            connectCorba();
+            getAvailableTimeSlots(bufferedReader);
         } catch (IOException e) {
             System.out.println(ANSI_RED + "Exception: " + e.getMessage() + RESET);
         }
@@ -203,12 +209,11 @@ public class StudentClient {
             } else {
                 System.out.println(ANSI_RED + "Unable to connect to remote server" + RESET);
             }
-//        } catch (ConnectException e) {
-//            System.out.println(ANSI_RED + "Unable to connect to remote server, retrying..." + RESET);
-//            Thread.sleep(1000);
-//            roomReservation = (RoomReservationInterface) Naming.lookup(registryURL);
-//            bookRoom(roomReservation, bufferedReader);
-//        }
+        } catch (org.omg.CORBA.TRANSIENT exception){
+            System.out.println(ANSI_RED + "Unable to connect to remote server, retrying..." + RESET);
+            Thread.sleep(1000);
+            connectCorba();
+            cancelBooking(bufferedReader);
         } catch (IOException e) {
             System.out.println(ANSI_RED + "Exception: " + e.getMessage() + RESET);
         }
@@ -235,12 +240,11 @@ public class StudentClient {
             } else {
                 System.out.println(ANSI_RED + "Unable to connect to remote server" + RESET);
             }
-//        } catch (ConnectException e) {
-//            System.out.println(ANSI_RED + "Unable to connect to remote server, retrying..." + RESET);
-//            Thread.sleep(1000);
-//            roomReservation = (RoomReservationInterface) Naming.lookup(registryURL);
-//            bookRoom(roomReservation, bufferedReader);
-//        }
+        } catch (org.omg.CORBA.TRANSIENT exception){
+            System.out.println(ANSI_RED + "Unable to connect to remote server, retrying..." + RESET);
+            Thread.sleep(1000);
+            connectCorba();
+            changeReservation(bufferedReader);
         } catch (IOException e) {
             System.out.println(ANSI_RED + "Exception: " + e.getMessage() + RESET);
         }

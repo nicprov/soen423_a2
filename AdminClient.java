@@ -5,6 +5,9 @@ import common.Parsing;
 import org.omg.CORBA.ORB;
 import org.omg.CosNaming.NamingContextExt;
 import org.omg.CosNaming.NamingContextExtHelper;
+import org.omg.CosNaming.NamingContextPackage.CannotProceed;
+import org.omg.CosNaming.NamingContextPackage.InvalidName;
+import org.omg.CosNaming.NamingContextPackage.NotFound;
 import protobuf.protos.CentralRepository;
 
 import java.io.BufferedReader;
@@ -28,22 +31,30 @@ public class AdminClient {
         BufferedReader bufferedReader = new BufferedReader(is);
         try {
             identifier = getIdentifier(bufferedReader);
-            CentralRepository centralRepository = CentralRepositoryUtils.lookupServer(identifier.substring(0, 3), "corba");
-            if (centralRepository == null || !centralRepository.getStatus()){
-                System.out.println("Unable to lookup server with central repository");
-                System.exit(1);
-            }
-            int port = centralRepository.getPort();
-            ORB orb = ORB.init(args, null);
-            org.omg.CORBA.Object objRef = orb.string_to_object("corbaloc::localhost:" + port + "/NameService");
-            NamingContextExt ncRef = NamingContextExtHelper.narrow(objRef);
-            roomReservation = RoomReservationApp.RoomReservationHelper.narrow(ncRef.resolve_str("RoomReservation"));
+            connectCorba();
             System.out.println("Obtained a handle on server object");
             logFilePath = "log/client/" + identifier + ".csv";
             Logger.initializeLog(logFilePath);
             startAdmin(bufferedReader);
         } catch (Exception e) {
             System.out.println(ANSI_RED + "Unable to start client: " + e.getMessage() + RESET);
+        }
+    }
+
+    private static void connectCorba() {
+        try {
+            CentralRepository centralRepository = CentralRepositoryUtils.lookupServer(identifier.substring(0, 3), "corba");
+            if (centralRepository == null || !centralRepository.getStatus()){
+                System.out.println("Unable to lookup server with central repository");
+                System.exit(1);
+            }
+            int port = centralRepository.getPort();
+            ORB orb = ORB.init( new String[0], null);
+            org.omg.CORBA.Object objRef = orb.string_to_object("corbaloc::localhost:" + port + "/NameService");
+            NamingContextExt ncRef = NamingContextExtHelper.narrow(objRef);
+            roomReservation = RoomReservationApp.RoomReservationHelper.narrow(ncRef.resolve_str("RoomReservation"));
+        } catch (Exception e){
+            System.out.println(ANSI_RED + "Unable to connect to corba: " + e.getMessage() + RESET);
         }
     }
 
@@ -138,12 +149,12 @@ public class AdminClient {
             } else {
                 System.out.println(ANSI_RED + "Unable to connect to remote server" + RESET);
             }
-        } /*catch (ConnectException e){
+        } catch (org.omg.CORBA.TRANSIENT exception){
             System.out.println(ANSI_RED + "Unable to connect to remote server, retrying..." + RESET);
             Thread.sleep(1000);
-            roomReservation = (RoomReservationInterface) Naming.lookup(registryURL);
-            createRoom(roomReservation, bufferedReader);
-        }*/ catch (IOException e) {
+            connectCorba();
+            createRoom(bufferedReader);
+        } catch (IOException e) {
             System.out.println(ANSI_RED + "Exception: " + e.getMessage() + RESET);
         }
     }
@@ -169,12 +180,12 @@ public class AdminClient {
             } else {
                 System.out.println(ANSI_RED + "Unable to connect to remote server" + RESET);
             }
-        } /*catch (ConnectException e){
+        } catch (org.omg.CORBA.TRANSIENT exception){
             System.out.println(ANSI_RED + "Unable to connect to remote server, retrying..." + RESET);
             Thread.sleep(1000);
-            roomReservation = (RoomReservationInterface) Naming.lookup(registryURL);
-            deleteRoom(roomReservation, bufferedReader);
-        } */catch (IOException e) {
+            connectCorba();
+            deleteRoom(bufferedReader);
+        } catch (IOException e) {
             System.out.println(ANSI_RED + "Exception: " + e.getMessage() + RESET);
         }
     }
