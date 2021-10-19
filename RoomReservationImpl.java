@@ -5,6 +5,7 @@ import collection.LinkedPositionalList;
 import collection.Node;
 import collection.Position;
 import common.CentralRepositoryUtils;
+import common.Logger;
 import common.Parsing;
 import org.omg.CORBA.ORB;
 import protobuf.protos.CentralRepository;
@@ -32,7 +33,7 @@ public class RoomReservationImpl extends RoomReservationApp.RoomReservationPOA {
 
     private volatile LinkedPositionalList<Entry<String, LinkedPositionalList<Entry<Short, LinkedPositionalList<Entry<String, LinkedPositionalList<Entry<String, String>>>>>>>> database;
     private volatile LinkedPositionalList<Entry<String, LinkedPositionalList<Entry<Date, Integer>>>> bookingCount;
-    //private final String logFilePath;
+    private final String logFilePath;
     private final Campus campus;
     public final DateFormat dateFormat;
     private ORB orb;
@@ -42,8 +43,12 @@ public class RoomReservationImpl extends RoomReservationApp.RoomReservationPOA {
         this.bookingCount = new LinkedPositionalList<>();
         this.campus = campus;
         this.dateFormat = new SimpleDateFormat("dd-MM-yyyy");
-        //logFilePath = "log/server/" + this.campus.toString() + ".csv";
-        //Logger.initializeLog(logFilePath);
+        logFilePath = "log/server/" + this.campus.toString() + ".csv";
+        try {
+            Logger.initializeLog(logFilePath);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         this.generateSampleData();
     }
 
@@ -98,8 +103,10 @@ public class RoomReservationImpl extends RoomReservationApp.RoomReservationPOA {
         }
         rmiResponse.date = this.dateFormat.format(new Date());
         rmiResponse.requestType = RequestObjectAction.CreateRoom.toString();
-        rmiResponse.requestParameters = "Room number: " + roomNumber + " | Date: " + date + " | List of Timeslots: " + listOfTimeSlots;
-        //Logger.log(logFilePath, rmiResponse);
+        rmiResponse.requestParameters = "Room number: " + roomNumber + " | Date: " + date + " | List of Timeslots: " + arrayToString(listOfTimeSlots);
+        try {
+            Logger.log(logFilePath, rmiResponse);
+        } catch (IOException ignored) {}
         return rmiResponse;
     }
 
@@ -141,8 +148,10 @@ public class RoomReservationImpl extends RoomReservationApp.RoomReservationPOA {
         }
         rmiResponse.date = this.dateFormat.format(new Date());
         rmiResponse.requestType = RequestObjectAction.CreateRoom.toString();
-        rmiResponse.requestParameters = "Room number: " + roomNumber + " | Date: " + date + " | List of Timeslots: " + listOfTimeSlots;
-        //Logger.log(logFilePath, rmiResponse);
+        rmiResponse.requestParameters = "Room number: " + roomNumber + " | Date: " + date + " | List of Timeslots: " + arrayToString(listOfTimeSlots);
+        try {
+            Logger.log(logFilePath, rmiResponse);
+        } catch (IOException ignored) {}
         return rmiResponse;
     }
 
@@ -196,7 +205,9 @@ public class RoomReservationImpl extends RoomReservationApp.RoomReservationPOA {
         rmiResponse.requestType = RequestObjectAction.GetAvailableTimeslots.toString();
         rmiResponse.requestParameters = "Date: " + date;
         rmiResponse.status = true;
-        //Logger.log(logFilePath, rmiResponse);
+        try {
+            Logger.log(logFilePath, rmiResponse);
+        } catch (IOException ignored) {}
         return rmiResponse;
     }
 
@@ -280,7 +291,9 @@ public class RoomReservationImpl extends RoomReservationApp.RoomReservationPOA {
         rmiResponse.requestType = RequestObjectAction.GetAvailableTimeslots.toString();
         rmiResponse.requestParameters = "Date: " + date;
         rmiResponse.status = true;
-        //Logger.log(logFilePath, rmiResponse);
+        try {
+            Logger.log(logFilePath, rmiResponse);
+        } catch (IOException ignored) {}
         return rmiResponse;
     }
 
@@ -311,7 +324,9 @@ public class RoomReservationImpl extends RoomReservationApp.RoomReservationPOA {
         rmiResponse.date = this.dateFormat.format(new Date());
         rmiResponse.requestType = RequestObjectAction.CreateRoom.toString();
         rmiResponse.requestParameters = "Identifier: " + identifier + " | Date: " + date;
-        //Logger.log(logFilePath, rmiResponse);
+        try {
+            Logger.log(logFilePath, rmiResponse);
+        } catch (IOException ignored) {}
         return rmiResponse;
     }
 
@@ -392,7 +407,9 @@ public class RoomReservationImpl extends RoomReservationApp.RoomReservationPOA {
         rmiResponse.date = this.dateFormat.format(new Date());
         rmiResponse.requestType = RequestObjectAction.CreateRoom.toString();
         rmiResponse.requestParameters = "Identifier: " + identifier + " | Room Number: " + roomNumber + " | Date: " + date + " | Timeslot: " + timeslot;
-        //Logger.log(logFilePath, rmiResponse);
+        try {
+            Logger.log(logFilePath, rmiResponse);
+        } catch (IOException ignored) {}
         return rmiResponse;
     }
 
@@ -442,7 +459,9 @@ public class RoomReservationImpl extends RoomReservationApp.RoomReservationPOA {
         rmiResponse.date = this.dateFormat.format(new Date());
         rmiResponse.requestType = RequestObjectAction.CreateRoom.toString();
         rmiResponse.requestParameters = "Booking Id: " + bookingId;
-        //Logger.log(logFilePath, rmiResponse);
+        try {
+            Logger.log(logFilePath, rmiResponse);
+        } catch (IOException ignored) {}
         return rmiResponse;
     }
 
@@ -591,6 +610,19 @@ public class RoomReservationImpl extends RoomReservationApp.RoomReservationPOA {
         rmiResponse.requestType = responseObject.getRequestType();
         rmiResponse.date = responseObject.getDateTime();
         return rmiResponse;
+    }
+
+    private String arrayToString(String[] array){
+        StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.append("[");
+        int counter = 1;
+        for (String item: array) {
+            stringBuilder.append(item);
+            if (counter++ < array.length)
+                stringBuilder.append("_");
+        }
+        stringBuilder.append("]");
+        return stringBuilder.toString();
     }
 
     /**

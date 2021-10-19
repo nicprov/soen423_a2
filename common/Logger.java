@@ -1,5 +1,7 @@
 package common;
 
+import RoomReservationApp.RMIResponse;
+
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -25,9 +27,13 @@ public class Logger {
      * @param rmiResponse RMI Response object
      * @throws IOException Exception
      */
-//    public static void log(String logFilePath, RMIResponse rmiResponse) throws IOException {
-//        FileWriter fileWriter = new FileWriter(logFilePath, true);
-//        fileWriter.append(rmiResponse.toString()).append("\n");
-//        fileWriter.close();
-//    }
+    public static void log(String logFilePath, RMIResponse rmiResponse) throws IOException {
+        FileWriter fileWriter = new FileWriter(logFilePath, true);
+        fileWriter.append(toString(rmiResponse)).append("\n");
+        fileWriter.close();
+    }
+
+    private static String toString(RMIResponse rmiResponse){
+        return rmiResponse.date + "," + rmiResponse.message + "," + rmiResponse.requestType + "," + rmiResponse.requestParameters + "," + rmiResponse.status;
+    }
 }

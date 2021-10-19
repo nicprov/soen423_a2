@@ -35,9 +35,8 @@ public class StudentClient {
             NamingContextExt ncRef = NamingContextExtHelper.narrow(objRef);
             roomReservation = RoomReservationApp.RoomReservationHelper.narrow(ncRef.resolve_str("RoomReservation"));
             System.out.println("Obtained a handle on server object");
-
-            //logFilePath = "log/client/" + identifier + ".csv";
-            //Logger.initializeLog(logFilePath);
+            logFilePath = "log/client/" + identifier + ".csv";
+            Logger.initializeLog(logFilePath);
             startStudent(bufferedReader);
         } catch (Exception e) {
             System.out.println(ANSI_RED + "Unable to start client: " + e.getMessage() + RESET);
@@ -140,7 +139,7 @@ public class StudentClient {
                     System.out.println(ANSI_GREEN + response.message + RESET);
                 else
                     System.out.println(ANSI_RED + response.message + RESET);
-                //Logger.log(logFilePath, response);
+                Logger.log(logFilePath, response);
             } else {
                 System.out.println(ANSI_RED + "Unable to connect to remote server" + RESET);
             }
@@ -170,7 +169,7 @@ public class StudentClient {
                     System.out.println(ANSI_GREEN + response.message + RESET);
                 else
                     System.out.println(ANSI_RED + response.message + RESET);
-                //Logger.log(logFilePath, response);
+                Logger.log(logFilePath, response);
             } else {
                 System.out.println(ANSI_RED + "Unable to connect to remote server" + RESET);
             }
@@ -200,7 +199,7 @@ public class StudentClient {
                     System.out.println(ANSI_GREEN + response.message + RESET);
                 else
                     System.out.println(ANSI_RED + response.message + RESET);
-                //Logger.log(logFilePath, response);
+                Logger.log(logFilePath, response);
             } else {
                 System.out.println(ANSI_RED + "Unable to connect to remote server" + RESET);
             }
@@ -232,7 +231,7 @@ public class StudentClient {
                     System.out.println(ANSI_GREEN + response.message + RESET);
                 else
                     System.out.println(ANSI_RED + response.message + RESET);
-                //Logger.log(logFilePath, response);
+                Logger.log(logFilePath, response);
             } else {
                 System.out.println(ANSI_RED + "Unable to connect to remote server" + RESET);
             }
