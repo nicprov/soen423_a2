@@ -25,6 +25,7 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.Date;
 import java.util.UUID;
+import java.util.concurrent.locks.ReentrantLock;
 
 import static common.ConsoleColours.ANSI_RED;
 import static common.ConsoleColours.RESET;
@@ -37,6 +38,7 @@ public class RoomReservationImpl extends RoomReservationApp.RoomReservationPOA {
     private final Campus campus;
     public final DateFormat dateFormat;
     private ORB orb;
+    private static ReentrantLock lock = new ReentrantLock();
 
     protected RoomReservationImpl(Campus campus){
         this.database = new LinkedPositionalList<>();
@@ -67,7 +69,12 @@ public class RoomReservationImpl extends RoomReservationApp.RoomReservationPOA {
             for (String timeslot: listOfTimeSlots){
                 timeslots.addFirst(new Node<>(timeslot, null));
             }
-            database.addFirst(new Node<>(date, new LinkedPositionalList<>(new Node<>(roomNumber, timeslots))));
+            lock.lock();
+            try {
+                database.addFirst(new Node<>(date, new LinkedPositionalList<>(new Node<>(roomNumber, timeslots))));
+            } finally {
+                lock.unlock();
+            }
         } else {
             // Date exist, check if room exist
             Position<Entry<Short, LinkedPositionalList<Entry<String, LinkedPositionalList<Entry<String, String>>>>>> roomPosition = findRoom(roomNumber, datePosition);
@@ -77,15 +84,25 @@ public class RoomReservationImpl extends RoomReservationApp.RoomReservationPOA {
                 for (String timeslot: listOfTimeSlots){
                     timeslots.addFirst(new Node<>(timeslot, null));
                 }
-                datePosition.getElement().getValue().addFirst(new Node<>(roomNumber, timeslots));
+                lock.lock();
+                try {
+                    datePosition.getElement().getValue().addFirst(new Node<>(roomNumber, timeslots));
+                } finally {
+                    lock.unlock();
+                }
             } else {
                 // Room exist, so check if timeslot exist
                 roomExist = true;
                 for (String timeslot: listOfTimeSlots){
                     if (findTimeslot(timeslot, roomPosition) == null) {
-                        // Timeslot does not exist, so create it, skip otherwise
-                        roomPosition.getElement().getValue().addFirst(new Node<>(timeslot, null));
-                        timeSlotCreated = true;
+                        lock.lock();
+                        try {
+                            // Timeslot does not exist, so create it, skip otherwise
+                            roomPosition.getElement().getValue().addFirst(new Node<>(timeslot, null));
+                            timeSlotCreated = true;
+                        } finally {
+                            lock.unlock();
+                        }
                     }
                 }
             }
@@ -130,10 +147,14 @@ public class RoomReservationImpl extends RoomReservationApp.RoomReservationPOA {
                                 }
                             }
                         }
-
-                        // Timeslot exists, so delete it
-                        roomPosition.getElement().getValue().remove(timeslotPosition);
-                        timeslotExist = true;
+                        lock.lock();
+                        try {
+                            // Timeslot exists, so delete it
+                            roomPosition.getElement().getValue().remove(timeslotPosition);
+                            timeslotExist = true;
+                        } finally {
+                            lock.unlock();
+                        }
                     }
                 }
             }
@@ -379,11 +400,16 @@ public class RoomReservationImpl extends RoomReservationApp.RoomReservationPOA {
 
                         if (timeslotPosition.getElement().getValue() == null){
                             // Create timeslot and add attributes
-                            isBooked = true;
-                            bookingId = this.campus + ":" + UUID.randomUUID();
-                            roomPosition.getElement().getValue().set(timeslotPosition, new Node<>(timeslot, new LinkedPositionalList<>()));
-                            timeslotPosition.getElement().getValue().addFirst(new Node<>("bookingId", bookingId));
-                            timeslotPosition.getElement().getValue().addFirst(new Node<>("studentId", identifier));
+                            lock.lock();
+                            try {
+                                isBooked = true;
+                                bookingId = this.campus + ":" + UUID.randomUUID();
+                                roomPosition.getElement().getValue().set(timeslotPosition, new Node<>(timeslot, new LinkedPositionalList<>()));
+                                timeslotPosition.getElement().getValue().addFirst(new Node<>("bookingId", bookingId));
+                                timeslotPosition.getElement().getValue().addFirst(new Node<>("studentId", identifier));
+                            } finally {
+                                lock.unlock();
+                            }
                         }
                     } else
                         isOverBookingCountLimit = true;
@@ -438,8 +464,13 @@ public class RoomReservationImpl extends RoomReservationApp.RoomReservationPOA {
                             // Reduce booking count
                             decreaseBookingCounter(identifier, datePosition.getElement().getKey());
 
-                            // Cancel booking
-                            roomPosition.getElement().getValue().set(timeslotPosition, new Node<>(timeslotPosition.getElement().getKey(), null));
+                            lock.lock();
+                            try {
+                                // Cancel booking
+                                roomPosition.getElement().getValue().set(timeslotPosition, new Node<>(timeslotPosition.getElement().getKey(), null));
+                            } finally {
+                                lock.unlock();
+                            }
                         }
                     }
                 }
@@ -480,18 +511,34 @@ public class RoomReservationImpl extends RoomReservationApp.RoomReservationPOA {
                     foundIdentifier = true;
                     for (Position<Entry<Date, Integer>> bookingDate: bookingIdentifier.getElement().getValue().positions()){
                         if (bookingDate.getElement().getKey().equals(tempDate)){
-                            foundDate = true;
-                            // Increase count
-                            bookingIdentifier.getElement().getValue().set(bookingDate, new Node<>(tempDate, bookingDate.getElement().getValue() + 1));
+                            lock.lock();
+                            try {
+                                foundDate = true;
+                                // Increase count
+                                bookingIdentifier.getElement().getValue().set(bookingDate, new Node<>(tempDate, bookingDate.getElement().getValue() + 1));
+                            } finally {
+                                lock.unlock();
+                            }
                         }
                     }
                     if (!foundDate){
-                        bookingIdentifier.getElement().getValue().addFirst(new Node<>(tempDate, 1));
+                        lock.lock();
+                        try {
+                            bookingIdentifier.getElement().getValue().addFirst(new Node<>(tempDate, 1));
+                        } finally {
+                            lock.unlock();
+                        }
                     }
                 }
             }
-            if (!foundIdentifier)
-                bookingCount.addFirst(new Node<>(identifier, new LinkedPositionalList<>(new Node<>(tempDate, 1))));
+            if (!foundIdentifier) {
+                lock.lock();
+                try {
+                    bookingCount.addFirst(new Node<>(identifier, new LinkedPositionalList<>(new Node<>(tempDate, 1))));
+                } finally {
+                    lock.unlock();
+                }
+            }
         } catch (ParseException e) {
             e.printStackTrace();
         }
@@ -509,8 +556,13 @@ public class RoomReservationImpl extends RoomReservationApp.RoomReservationPOA {
                 if (bookingIdentifier.getElement().getKey().equals(identifier)) {
                     for (Position<Entry<Date, Integer>> bookingDate: bookingIdentifier.getElement().getValue().positions()){
                         if (bookingDate.getElement().getKey().equals(tempDate)){
-                            // Decrease count
-                            bookingIdentifier.getElement().getValue().set(bookingDate, new Node<>(tempDate, bookingDate.getElement().getValue() - 1));
+                            lock.lock();
+                            try {
+                                // Decrease count
+                                bookingIdentifier.getElement().getValue().set(bookingDate, new Node<>(tempDate, bookingDate.getElement().getValue() - 1));
+                            } finally {
+                                lock.unlock();
+                            }
                         }
                     }
                 }
