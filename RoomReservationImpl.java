@@ -38,7 +38,7 @@ public class RoomReservationImpl extends RoomReservationApp.RoomReservationPOA {
     private final Campus campus;
     public final DateFormat dateFormat;
     private ORB orb;
-    private static ReentrantLock lock = new ReentrantLock();
+    private final ReentrantLock lock = new ReentrantLock();
 
     protected RoomReservationImpl(Campus campus){
         this.database = new LinkedPositionalList<>();
@@ -262,8 +262,7 @@ public class RoomReservationImpl extends RoomReservationApp.RoomReservationPOA {
                 response.requestType = RequestObjectAction.ChangeReservation.toString();
                 response.requestParameters = requestParameters;
                 response.status = true;
-                // TODO get new booking id
-                response.message = "Successfully changed reservation, new booking ID:";
+                response.message = createBooking.message;
                 response.date = this.dateFormat.format(new Date());
                 return response;
             } else {
@@ -487,6 +486,7 @@ public class RoomReservationImpl extends RoomReservationApp.RoomReservationPOA {
             rmiResponse.message = "Cancelled booking (" + bookingId + ")";
             rmiResponse.status = true;
         }
+
         rmiResponse.date = this.dateFormat.format(new Date());
         rmiResponse.requestType = RequestObjectAction.CreateRoom.toString();
         rmiResponse.requestParameters = "Booking Id: " + bookingId;
