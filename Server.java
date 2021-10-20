@@ -188,7 +188,7 @@ public class Server {
             case CreateRoom:
                 tempObject = ResponseObject.newBuilder();
                 tempObject.setMessage("Create Room not supported through UDP");
-                tempObject.setDateTime(roomReservation.dateFormat.format(new Date()));
+                tempObject.setDateTime(new SimpleDateFormat("dd-MM-yyyy").format(new Date()));
                 tempObject.setRequestType(RequestObjectAction.CreateRoom.toString());
                 tempObject.setRequestParameters("None");
                 tempObject.setStatus(false);
@@ -198,7 +198,7 @@ public class Server {
             default:
                 tempObject = ResponseObject.newBuilder();
                 tempObject.setMessage("Delete Room not supported through UDP");
-                tempObject.setDateTime(roomReservation.dateFormat.format(new Date()));
+                tempObject.setDateTime(new SimpleDateFormat("dd-MM-yyyy").format(new Date()));
                 tempObject.setRequestType(RequestObjectAction.DeleteRoom.toString());
                 tempObject.setRequestParameters("None");
                 tempObject.setStatus(false);
@@ -232,16 +232,6 @@ public class Server {
             default:
                 return Campus.WST;
         }
-    }
-
-    /**
-     * Prints welcome screen
-     * @param campus Campus name (dvl, wst, kkl)
-     */
-    private static void printWelcome(Campus campus){
-        System.out.println("==============================");
-        System.out.println("Welcome to the " + campus.toString().toUpperCase() + " campus!");
-        System.out.println("==============================");
     }
 
     private static ResponseObject toResponseObject(RMIResponse rmiResponse){

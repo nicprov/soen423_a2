@@ -1,9 +1,5 @@
 import RoomReservationApp.RMIResponse;
 import common.*;
-import org.omg.CORBA.ORB;
-import org.omg.CosNaming.NamingContextExt;
-import org.omg.CosNaming.NamingContextExtHelper;
-import protobuf.protos.CentralRepository;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -15,7 +11,6 @@ import static common.ConsoleColours.*;
 
 public class StudentClient {
     private static String identifier;
-    private static String registryURL;
     private static String logFilePath;
     private static RoomReservationApp.RoomReservation roomReservation;
 
@@ -24,30 +19,13 @@ public class StudentClient {
         BufferedReader bufferedReader = new BufferedReader(is);
         try {
             identifier = getIdentifier(bufferedReader);
-            connectCorba();
+            roomReservation = Corba.connectCorba(identifier.substring(0, 3));
             System.out.println("Obtained a handle on server object");
             logFilePath = "log/client/" + identifier + ".csv";
             Logger.initializeLog(logFilePath);
             startStudent(bufferedReader);
         } catch (Exception e) {
             System.out.println(ANSI_RED + "Unable to start client: " + e.getMessage() + RESET);
-        }
-    }
-
-    private static void connectCorba() {
-        try {
-            CentralRepository centralRepository = CentralRepositoryUtils.lookupServer(identifier.substring(0, 3), "corba");
-            if (centralRepository == null || !centralRepository.getStatus()){
-                System.out.println("Unable to lookup server with central repository");
-                System.exit(1);
-            }
-            int port = centralRepository.getPort();
-            ORB orb = ORB.init( new String[0], null);
-            org.omg.CORBA.Object objRef = orb.string_to_object("corbaloc::localhost:" + port + "/NameService");
-            NamingContextExt ncRef = NamingContextExtHelper.narrow(objRef);
-            roomReservation = RoomReservationApp.RoomReservationHelper.narrow(ncRef.resolve_str("RoomReservation"));
-        } catch (Exception e){
-            System.out.println(ANSI_RED + "Unable to connect to corba: " + e.getMessage() + RESET);
         }
     }
 
@@ -81,7 +59,7 @@ public class StudentClient {
      * @throws IOException Exception
      */
     private static String listAndGetActions(BufferedReader bufferedReader) throws IOException {
-        String action = "";
+        String action;
         System.out.println("\n==============================");
         System.out.println("Student section");
         System.out.println("==============================");
@@ -154,7 +132,7 @@ public class StudentClient {
         } catch (org.omg.CORBA.TRANSIENT exception){
             System.out.println(ANSI_RED + "Unable to connect to remote server, retrying..." + RESET);
             Thread.sleep(1000);
-            connectCorba();
+            roomReservation = Corba.connectCorba(identifier.substring(0, 3));
             bookRoom(bufferedReader);
         } catch (IOException e) {
             System.out.println(ANSI_RED + "Exception: " + e.getMessage() + RESET);
@@ -183,7 +161,7 @@ public class StudentClient {
         } catch (org.omg.CORBA.TRANSIENT exception){
             System.out.println(ANSI_RED + "Unable to connect to remote server, retrying..." + RESET);
             Thread.sleep(1000);
-            connectCorba();
+            roomReservation = Corba.connectCorba(identifier.substring(0, 3));
             getAvailableTimeSlots(bufferedReader);
         } catch (IOException e) {
             System.out.println(ANSI_RED + "Exception: " + e.getMessage() + RESET);
@@ -212,7 +190,7 @@ public class StudentClient {
         } catch (org.omg.CORBA.TRANSIENT exception){
             System.out.println(ANSI_RED + "Unable to connect to remote server, retrying..." + RESET);
             Thread.sleep(1000);
-            connectCorba();
+            roomReservation = Corba.connectCorba(identifier.substring(0, 3));
             cancelBooking(bufferedReader);
         } catch (IOException e) {
             System.out.println(ANSI_RED + "Exception: " + e.getMessage() + RESET);
@@ -243,7 +221,7 @@ public class StudentClient {
         } catch (org.omg.CORBA.TRANSIENT exception){
             System.out.println(ANSI_RED + "Unable to connect to remote server, retrying..." + RESET);
             Thread.sleep(1000);
-            connectCorba();
+            roomReservation = Corba.connectCorba(identifier.substring(0, 3));
             changeReservation(bufferedReader);
         } catch (IOException e) {
             System.out.println(ANSI_RED + "Exception: " + e.getMessage() + RESET);
