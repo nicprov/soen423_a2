@@ -86,81 +86,44 @@ public class AdminClient {
     private static void startAdmin(BufferedReader bufferedReader) throws IOException, InterruptedException {
         while (true) {
             String action = listAndGetActions(bufferedReader);
-            switch (action){
-                case "1":
-                    createRoom(bufferedReader);
-                    break;
-                case "2":
-                    deleteRoom(bufferedReader);
-                    break;
-                case "3":
-                default:
-                    System.out.println("Goodbye!");
-                    System.exit(0);
-                    break;
+            try {
+                RMIResponse response = null;
+                switch (action){
+                    case "1":
+                        System.out.println("\nCREATE ROOM");
+                        System.out.println("-----------");
+                        response = roomReservation.createRoom(Parsing.getRoomNumber(bufferedReader),
+                                Parsing.getDate(bufferedReader), Parsing.getTimeslots(bufferedReader));
+                        break;
+                    case "2":
+                        System.out.println("\nDELETE ROOM");
+                        System.out.println("-----------");
+                        response = roomReservation.createRoom(Parsing.getRoomNumber(bufferedReader),
+                                Parsing.getDate(bufferedReader), Parsing.getTimeslots(bufferedReader));
+                        break;
+                    case "3":
+                    default:
+                        System.out.println("Goodbye!");
+                        System.exit(0);
+                        break;
+                }
+                if (response != null) {
+                    if (response.status)
+                        System.out.println(ANSI_GREEN + response.message + RESET);
+                    else
+                        System.out.println(ANSI_RED + response.message + RESET);
+                    Logger.log(logFilePath, response);
+                } else {
+                    System.out.println(ANSI_RED + "Unable to connect to remote server" + RESET);
+                }
+            } catch (org.omg.CORBA.TRANSIENT exception){
+                System.out.println(ANSI_RED + "Unable to connect to remote server, retrying..." + RESET);
+                Thread.sleep(1000);
+                roomReservation = Corba.connectCorba(identifier.substring(0, 3));
+                startAdmin(bufferedReader);
+            } catch (IOException e) {
+                System.out.println(ANSI_RED + "Exception: " + e.getMessage() + RESET);
             }
-        }
-    }
-
-    /**
-     * Calls remote createRoom method on server
-     * @param bufferedReader Input buffer
-     * @throws MalformedURLException Exception
-     * @throws InterruptedException Exception
-     */
-    private static void createRoom(BufferedReader bufferedReader) throws MalformedURLException, InterruptedException {
-        System.out.println("\nCREATE ROOM");
-        System.out.println("-----------");
-        try {
-            RMIResponse response = roomReservation.createRoom(Parsing.getRoomNumber(bufferedReader),
-                    Parsing.getDate(bufferedReader), Parsing.getTimeslots(bufferedReader));
-            if (response != null) {
-                if (response.status)
-                    System.out.println(ANSI_GREEN + response.message + RESET);
-                else
-                    System.out.println(ANSI_RED + response.message + RESET);
-                Logger.log(logFilePath, response);
-            } else {
-                System.out.println(ANSI_RED + "Unable to connect to remote server" + RESET);
-            }
-        } catch (org.omg.CORBA.TRANSIENT exception){
-            System.out.println(ANSI_RED + "Unable to connect to remote server, retrying..." + RESET);
-            Thread.sleep(1000);
-            roomReservation = Corba.connectCorba(identifier.substring(0, 3));
-            createRoom(bufferedReader);
-        } catch (IOException e) {
-            System.out.println(ANSI_RED + "Exception: " + e.getMessage() + RESET);
-        }
-    }
-
-    /**
-     * Calls remote deleteRoom method on server
-     * @param bufferedReader Input buffer
-     * @throws InterruptedException Exception
-     * @throws MalformedURLException Exception
-     */
-    private static void deleteRoom(BufferedReader bufferedReader) throws InterruptedException, MalformedURLException {
-        System.out.println("\nDELETE ROOM");
-        System.out.println("-----------");
-        try {
-            RMIResponse response = roomReservation.deleteRoom(Parsing.getRoomNumber(bufferedReader),
-                    Parsing.getDate(bufferedReader), Parsing.getTimeslots(bufferedReader));
-            if (response != null) {
-                if (response.status)
-                    System.out.println(ANSI_GREEN + response.message + RESET);
-                else
-                    System.out.println(ANSI_RED + response.message + RESET);
-                Logger.log(logFilePath, response);
-            } else {
-                System.out.println(ANSI_RED + "Unable to connect to remote server" + RESET);
-            }
-        } catch (org.omg.CORBA.TRANSIENT exception){
-            System.out.println(ANSI_RED + "Unable to connect to remote server, retrying..." + RESET);
-            Thread.sleep(1000);
-            roomReservation = Corba.connectCorba(identifier.substring(0, 3));
-            deleteRoom(bufferedReader);
-        } catch (IOException e) {
-            System.out.println(ANSI_RED + "Exception: " + e.getMessage() + RESET);
         }
     }
 }

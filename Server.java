@@ -171,7 +171,7 @@ public class Server {
         ResponseObject.Builder tempObject;
 
         // Perform action
-        SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MM-yyyy");
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
         switch (RequestObjectAction.valueOf(requestObject.getAction())){
             case GetAvailableTimeslots:
                 responseObject = toResponseObject(roomReservation.getAvailableTimeSlotOnCampus(requestObject.getDate()));
@@ -188,7 +188,7 @@ public class Server {
             case CreateRoom:
                 tempObject = ResponseObject.newBuilder();
                 tempObject.setMessage("Create Room not supported through UDP");
-                tempObject.setDateTime(new SimpleDateFormat("dd-MM-yyyy").format(new Date()));
+                tempObject.setDateTime(new SimpleDateFormat("yyyy-MM-dd").format(new Date()));
                 tempObject.setRequestType(RequestObjectAction.CreateRoom.toString());
                 tempObject.setRequestParameters("None");
                 tempObject.setStatus(false);
@@ -198,7 +198,7 @@ public class Server {
             default:
                 tempObject = ResponseObject.newBuilder();
                 tempObject.setMessage("Delete Room not supported through UDP");
-                tempObject.setDateTime(new SimpleDateFormat("dd-MM-yyyy").format(new Date()));
+                tempObject.setDateTime(new SimpleDateFormat("yyyy-MM-dd").format(new Date()));
                 tempObject.setRequestType(RequestObjectAction.DeleteRoom.toString());
                 tempObject.setRequestParameters("None");
                 tempObject.setStatus(false);

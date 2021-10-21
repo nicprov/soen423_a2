@@ -116,7 +116,7 @@ public class RoomReservationImpl extends RoomReservationApp.RoomReservationPOA {
             rmiResponse.message = "Added timeslots to room (" + roomNumber + ")";
             rmiResponse.status = true;
         }
-        rmiResponse.date = new SimpleDateFormat("dd-MM-yyyy").format(new Date());
+        rmiResponse.date = new SimpleDateFormat("yyyy-MM-dd").format(new Date());
         rmiResponse.requestType = RequestObjectAction.CreateRoom.toString();
         rmiResponse.requestParameters = "Room number: " + roomNumber + " | Date: " + date + " | List of Timeslots: " + arrayToString(listOfTimeSlots);
         try {
@@ -165,7 +165,7 @@ public class RoomReservationImpl extends RoomReservationApp.RoomReservationPOA {
             rmiResponse.message = "Removed timeslots from room (" + roomNumber + ")";
             rmiResponse.status = true;
         }
-        rmiResponse.date = new SimpleDateFormat("dd-MM-yyyy").format(new Date());
+        rmiResponse.date = new SimpleDateFormat("yyyy-MM-dd").format(new Date());
         rmiResponse.requestType = RequestObjectAction.CreateRoom.toString();
         rmiResponse.requestParameters = "Room number: " + roomNumber + " | Date: " + date + " | List of Timeslots: " + arrayToString(listOfTimeSlots);
         try {
@@ -220,7 +220,7 @@ public class RoomReservationImpl extends RoomReservationApp.RoomReservationPOA {
         //  Create response object for rmi
         RMIResponse rmiResponse = new RMIResponse();
         rmiResponse.message = message;
-        rmiResponse.date = new SimpleDateFormat("dd-MM-yyyy").format(new Date());
+        rmiResponse.date = new SimpleDateFormat("yyyy-MM-dd").format(new Date());
         rmiResponse.requestType = RequestObjectAction.GetAvailableTimeslots.toString();
         rmiResponse.requestParameters = "Date: " + date;
         rmiResponse.status = true;
@@ -259,7 +259,7 @@ public class RoomReservationImpl extends RoomReservationApp.RoomReservationPOA {
                 response.requestParameters = requestParameters;
                 response.status = true;
                 response.message = createBooking.message;
-                response.date = new SimpleDateFormat("dd-MM-yyyy").format(new Date());
+                response.date = new SimpleDateFormat("yyyy-MM-dd").format(new Date());
                 return response;
             } else {
                 createBooking.requestType = RequestObjectAction.ChangeReservation.toString();
@@ -303,7 +303,7 @@ public class RoomReservationImpl extends RoomReservationApp.RoomReservationPOA {
         }
         RMIResponse rmiResponse = new RMIResponse();
         rmiResponse.message = Integer.toString(counter);
-        rmiResponse.date = new SimpleDateFormat("dd-MM-yyyy").format(new Date());
+        rmiResponse.date = new SimpleDateFormat("yyyy-MM-dd").format(new Date());
         rmiResponse.requestType = RequestObjectAction.GetAvailableTimeslots.toString();
         rmiResponse.requestParameters = "Date: " + date;
         rmiResponse.status = true;
@@ -337,9 +337,9 @@ public class RoomReservationImpl extends RoomReservationApp.RoomReservationPOA {
         RMIResponse rmiResponse = new RMIResponse();
         rmiResponse.status = true;
         rmiResponse.message = Integer.toString(counter);
-        rmiResponse.date = new SimpleDateFormat("dd-MM-yyyy").format(new Date());
+        rmiResponse.date = new SimpleDateFormat("yyyy-MM-dd").format(new Date());
         rmiResponse.requestType = RequestObjectAction.CreateRoom.toString();
-        rmiResponse.requestParameters = "Identifier: " + identifier + " | Date: " + date;
+        rmiResponse.requestParameters = "Identifier: " + identifier + " | Date: " + new SimpleDateFormat("yyyy-MM-dd").format(date);
         try {
             Logger.log(logFilePath, rmiResponse);
         } catch (IOException ignored) {}
@@ -425,7 +425,7 @@ public class RoomReservationImpl extends RoomReservationApp.RoomReservationPOA {
             rmiResponse.message = "Unable to book room, timeslot (" + timeslot + ") has already booked";
             rmiResponse.status = false;
         }
-        rmiResponse.date = new SimpleDateFormat("dd-MM-yyyy").format(new Date());
+        rmiResponse.date = new SimpleDateFormat("yyyy-MM-dd").format(new Date());
         rmiResponse.requestType = RequestObjectAction.CreateRoom.toString();
         rmiResponse.requestParameters = "Identifier: " + identifier + " | Room Number: " + roomNumber + " | Date: " + date + " | Timeslot: " + timeslot;
         try {
@@ -483,7 +483,7 @@ public class RoomReservationImpl extends RoomReservationApp.RoomReservationPOA {
             rmiResponse.status = true;
         }
 
-        rmiResponse.date = new SimpleDateFormat("dd-MM-yyyy").format(new Date());
+        rmiResponse.date = new SimpleDateFormat("yyyy-MM-dd").format(new Date());
         rmiResponse.requestType = RequestObjectAction.CreateRoom.toString();
         rmiResponse.requestParameters = "Booking Id: " + bookingId;
         try {
@@ -499,7 +499,7 @@ public class RoomReservationImpl extends RoomReservationApp.RoomReservationPOA {
      */
     public void increaseBookingCounter(String identifier, String date) {
         try {
-            Date tempDate = new SimpleDateFormat("dd-MM-yyyy").parse(date);
+            Date tempDate = new SimpleDateFormat("yyyy-MM-dd").parse(date);
             boolean foundIdentifier = false;
             boolean foundDate = false;
             for (Position<Entry<String, LinkedPositionalList<Entry<Date, Integer>>>> bookingIdentifier: bookingCount.positions()){
@@ -547,7 +547,7 @@ public class RoomReservationImpl extends RoomReservationApp.RoomReservationPOA {
      */
     public void decreaseBookingCounter(String identifier, String date) {
         try {
-            Date tempDate = new SimpleDateFormat("dd-MM-yyyy").parse(date);
+            Date tempDate = new SimpleDateFormat("yyyy-MM-dd").parse(date);
             for (Position<Entry<String, LinkedPositionalList<Entry<Date, Integer>>>> bookingIdentifier: bookingCount.positions()){
                 if (bookingIdentifier.getElement().getKey().equals(identifier)) {
                     for (Position<Entry<Date, Integer>> bookingDate: bookingIdentifier.getElement().getValue().positions()){
@@ -683,5 +683,9 @@ public class RoomReservationImpl extends RoomReservationApp.RoomReservationPOA {
         this.createRoom((short) 202, Parsing.tryParseDate("2021-01-02"), Parsing.tryParseTimeslotList("9:30-10:00"));
         this.createRoom((short) 203, Parsing.tryParseDate("2021-01-01"), Parsing.tryParseTimeslotList("9:30-10:00"));
         this.createRoom((short) 203, Parsing.tryParseDate("2021-01-02"), Parsing.tryParseTimeslotList("9:30-10:00"));
+        this.createRoom((short) 204, Parsing.tryParseDate("2021-01-01"), Parsing.tryParseTimeslotList("9:30-10:00"));
+        this.createRoom((short) 204, Parsing.tryParseDate("2021-01-02"), Parsing.tryParseTimeslotList("9:30-10:00"));
+        this.createRoom((short) 205, Parsing.tryParseDate("2021-01-01"), Parsing.tryParseTimeslotList("9:30-10:00"));
+        this.createRoom((short) 205, Parsing.tryParseDate("2021-01-02"), Parsing.tryParseTimeslotList("9:30-10:00"));
     }
 }

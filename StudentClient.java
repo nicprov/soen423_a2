@@ -87,144 +87,56 @@ public class StudentClient {
     private static void startStudent(BufferedReader bufferedReader) throws IOException, InterruptedException {
         while (true) {
             String action = listAndGetActions(bufferedReader);
-            switch (action) {
-                case "1":
-                    bookRoom(bufferedReader);
-                    break;
-                case "2":
-                    getAvailableTimeSlots(bufferedReader);
-                    break;
-                case "3":
-                    cancelBooking(bufferedReader);
-                    break;
-                case "4":
-                    changeReservation(bufferedReader);
-                    break;
-                case "5":
-                default:
-                    System.out.println("Goodbye!");
-                    System.exit(0);
-                    break;
+            try {
+                RMIResponse response = null;
+                switch (action) {
+                    case "1":
+                        System.out.println("\nBOOK ROOM");
+                        System.out.println("-----------");
+                        response = roomReservation.bookRoom(identifier, Parsing.getCampus(bufferedReader),
+                                Parsing.getRoomNumber(bufferedReader), Parsing.getDate(bufferedReader), Parsing.getTimeslot(bufferedReader));
+                        break;
+                    case "2":
+                        System.out.println("\nGET AVAILABLE TIME SLOTS");
+                        System.out.println("-----------");
+                        response = roomReservation.getAvailableTimeSlot(Parsing.getDate(bufferedReader));
+                        break;
+                    case "3":
+                        System.out.println("\nCANCEL BOOKING");
+                        System.out.println("-----------");
+                        response = roomReservation.cancelBooking(identifier, Parsing.getBookingId(bufferedReader));
+                        break;
+                    case "4":
+                        System.out.println("\nCHANGE RESERVATION");
+                        System.out.println("-----------");
+                        response = roomReservation.changeReservation(identifier, Parsing.getBookingId(bufferedReader),
+                                Parsing.getCampus(bufferedReader), Parsing.getRoomNumber(bufferedReader), Parsing.getDate(bufferedReader),
+                                Parsing.getTimeslot(bufferedReader));
+                        break;
+                    case "5":
+                    default:
+                        System.out.println("Goodbye!");
+                        System.exit(0);
+                        break;
+                }
+                if (response != null) {
+                    if (response.status)
+                        System.out.println(ANSI_GREEN + response.message + RESET);
+                    else
+                        System.out.println(ANSI_RED + response.message + RESET);
+                    Logger.log(logFilePath, response);
+                } else {
+                    System.out.println(ANSI_RED + "Unable to connect to remote server" + RESET);
+                }
+            } catch (org.omg.CORBA.TRANSIENT exception){
+                System.out.println(ANSI_RED + "Unable to connect to remote server, retrying..." + RESET);
+                Thread.sleep(1000);
+                roomReservation = Corba.connectCorba(identifier.substring(0, 3));
+                startStudent(bufferedReader);
+            } catch (IOException e) {
+                System.out.println(ANSI_RED + "Exception: " + e.getMessage() + RESET);
             }
-        }
-    }
 
-    /**
-     * Performs book room action and calls remote RMI server
-     * @param bufferedReader Input buffer
-     * @throws InterruptedException Exception
-     */
-    private static void bookRoom(BufferedReader bufferedReader) throws InterruptedException {
-        System.out.println("\nBOOK ROOM");
-        System.out.println("-----------");
-        try {
-            RMIResponse response = roomReservation.bookRoom(identifier, Parsing.getCampus(bufferedReader),
-                    Parsing.getRoomNumber(bufferedReader), Parsing.getDate(bufferedReader), Parsing.getTimeslot(bufferedReader));
-            if (response != null) {
-                if (response.status)
-                    System.out.println(ANSI_GREEN + response.message + RESET);
-                else
-                    System.out.println(ANSI_RED + response.message + RESET);
-                Logger.log(logFilePath, response);
-            } else {
-                System.out.println(ANSI_RED + "Unable to connect to remote server" + RESET);
-            }
-        } catch (org.omg.CORBA.TRANSIENT exception){
-            System.out.println(ANSI_RED + "Unable to connect to remote server, retrying..." + RESET);
-            Thread.sleep(1000);
-            roomReservation = Corba.connectCorba(identifier.substring(0, 3));
-            bookRoom(bufferedReader);
-        } catch (IOException e) {
-            System.out.println(ANSI_RED + "Exception: " + e.getMessage() + RESET);
-        }
-    }
-
-    /**
-     * Performs get available time slots action and calls remote RMI server
-     * @param bufferedReader Input buffer
-     * @throws InterruptedException Exception
-     */
-    private static void getAvailableTimeSlots(BufferedReader bufferedReader) throws InterruptedException {
-        System.out.println("\nGET AVAILABLE TIME SLOTS");
-        System.out.println("-----------");
-        try {
-            RMIResponse response = roomReservation.getAvailableTimeSlot(Parsing.getDate(bufferedReader));
-            if (response != null) {
-                if (response.status)
-                    System.out.println(ANSI_GREEN + response.message + RESET);
-                else
-                    System.out.println(ANSI_RED + response.message + RESET);
-                Logger.log(logFilePath, response);
-            } else {
-                System.out.println(ANSI_RED + "Unable to connect to remote server" + RESET);
-            }
-        } catch (org.omg.CORBA.TRANSIENT exception){
-            System.out.println(ANSI_RED + "Unable to connect to remote server, retrying..." + RESET);
-            Thread.sleep(1000);
-            roomReservation = Corba.connectCorba(identifier.substring(0, 3));
-            getAvailableTimeSlots(bufferedReader);
-        } catch (IOException e) {
-            System.out.println(ANSI_RED + "Exception: " + e.getMessage() + RESET);
-        }
-    }
-
-    /**
-     * Performs cancel booking action and calls remote RMI server
-     * @param bufferedReader Input buffer
-     * @throws InterruptedException Exception
-     */
-    private static void cancelBooking(BufferedReader bufferedReader) throws InterruptedException {
-        System.out.println("\nCANCEL BOOKING");
-        System.out.println("-----------");
-        try {
-            RMIResponse response = roomReservation.cancelBooking(identifier, Parsing.getBookingId(bufferedReader));
-            if (response != null) {
-                if (response.status)
-                    System.out.println(ANSI_GREEN + response.message + RESET);
-                else
-                    System.out.println(ANSI_RED + response.message + RESET);
-                Logger.log(logFilePath, response);
-            } else {
-                System.out.println(ANSI_RED + "Unable to connect to remote server" + RESET);
-            }
-        } catch (org.omg.CORBA.TRANSIENT exception){
-            System.out.println(ANSI_RED + "Unable to connect to remote server, retrying..." + RESET);
-            Thread.sleep(1000);
-            roomReservation = Corba.connectCorba(identifier.substring(0, 3));
-            cancelBooking(bufferedReader);
-        } catch (IOException e) {
-            System.out.println(ANSI_RED + "Exception: " + e.getMessage() + RESET);
-        }
-    }
-
-    /**
-     * Performs change reservation action and calls remote RMI server
-     * @param bufferedReader Input buffer
-     * @throws InterruptedException Exception
-     */
-    private static void changeReservation(BufferedReader bufferedReader) throws InterruptedException {
-        System.out.println("\nCHANGE RESERVATION");
-        System.out.println("-----------");
-        try {
-            RMIResponse response = roomReservation.changeReservation(identifier, Parsing.getBookingId(bufferedReader),
-                    Parsing.getCampus(bufferedReader), Parsing.getRoomNumber(bufferedReader), Parsing.getDate(bufferedReader),
-                    Parsing.getTimeslot(bufferedReader));
-            if (response != null) {
-                if (response.status)
-                    System.out.println(ANSI_GREEN + response.message + RESET);
-                else
-                    System.out.println(ANSI_RED + response.message + RESET);
-                Logger.log(logFilePath, response);
-            } else {
-                System.out.println(ANSI_RED + "Unable to connect to remote server" + RESET);
-            }
-        } catch (org.omg.CORBA.TRANSIENT exception){
-            System.out.println(ANSI_RED + "Unable to connect to remote server, retrying..." + RESET);
-            Thread.sleep(1000);
-            roomReservation = Corba.connectCorba(identifier.substring(0, 3));
-            changeReservation(bufferedReader);
-        } catch (IOException e) {
-            System.out.println(ANSI_RED + "Exception: " + e.getMessage() + RESET);
         }
     }
 }
