@@ -35,7 +35,8 @@ public class RoomReservationImpl extends RoomReservationApp.RoomReservationPOA {
     private final String logFilePath;
     private final Campus campus;
     private ORB orb;
-    private final ReentrantLock lock = new ReentrantLock();
+    private final ReentrantLock databaseLock = new ReentrantLock();
+    private final ReentrantLock bookingLock = new ReentrantLock();
 
     protected RoomReservationImpl(Campus campus){
         database = new LinkedPositionalList<>();
@@ -62,7 +63,7 @@ public class RoomReservationImpl extends RoomReservationApp.RoomReservationPOA {
      * @return Corba Response object
      */
     @Override
-    public CorbaResponse createRoom(short roomNumber, String date, String[] listOfTimeSlots) {
+    public synchronized CorbaResponse createRoom(short roomNumber, String date, String[] listOfTimeSlots) {
         Position<Entry<String, LinkedPositionalList<Entry<Short, LinkedPositionalList<Entry<String, LinkedPositionalList<Entry<String, String>>>>>>>> datePosition = findDate(date);
         boolean timeSlotCreated = false;
         boolean roomExist = false;
@@ -72,11 +73,11 @@ public class RoomReservationImpl extends RoomReservationApp.RoomReservationPOA {
             for (String timeslot: listOfTimeSlots){
                 timeslots.addFirst(new Node<>(timeslot, null));
             }
-            lock.lock();
+            databaseLock.lock();
             try {
                 database.addFirst(new Node<>(date, new LinkedPositionalList<>(new Node<>(roomNumber, timeslots))));
             } finally {
-                lock.unlock();
+                databaseLock.unlock();
             }
         } else {
             // Date exist, check if room exist
@@ -87,24 +88,24 @@ public class RoomReservationImpl extends RoomReservationApp.RoomReservationPOA {
                 for (String timeslot: listOfTimeSlots){
                     timeslots.addFirst(new Node<>(timeslot, null));
                 }
-                lock.lock();
+                databaseLock.lock();
                 try {
                     datePosition.getElement().getValue().addFirst(new Node<>(roomNumber, timeslots));
                 } finally {
-                    lock.unlock();
+                    databaseLock.unlock();
                 }
             } else {
                 // Room exist, so check if timeslot exist
                 roomExist = true;
                 for (String timeslot: listOfTimeSlots){
                     if (findTimeslot(timeslot, roomPosition) == null) {
-                        lock.lock();
+                        databaseLock.lock();
                         try {
                             // Timeslot does not exist, so create it, skip otherwise
                             roomPosition.getElement().getValue().addFirst(new Node<>(timeslot, null));
                             timeSlotCreated = true;
                         } finally {
-                            lock.unlock();
+                            databaseLock.unlock();
                         }
                     }
                 }
@@ -138,7 +139,7 @@ public class RoomReservationImpl extends RoomReservationApp.RoomReservationPOA {
      * @return Corba Response object
      */
     @Override
-    public CorbaResponse deleteRoom(short roomNumber, String date, String[] listOfTimeSlots) {
+    public synchronized CorbaResponse deleteRoom(short roomNumber, String date, String[] listOfTimeSlots) {
         Position<Entry<String, LinkedPositionalList<Entry<Short, LinkedPositionalList<Entry<String, LinkedPositionalList<Entry<String, String>>>>>>>> datePosition = findDate(date);
         boolean timeslotExist = false;
         if (datePosition != null){
@@ -157,13 +158,13 @@ public class RoomReservationImpl extends RoomReservationApp.RoomReservationPOA {
                                 }
                             }
                         }
-                        lock.lock();
+                        databaseLock.lock();
                         try {
                             // Timeslot exists, so delete it
                             roomPosition.getElement().getValue().remove(timeslotPosition);
                             timeslotExist = true;
                         } finally {
-                            lock.unlock();
+                            databaseLock.unlock();
                         }
                     }
                 }
@@ -196,8 +197,8 @@ public class RoomReservationImpl extends RoomReservationApp.RoomReservationPOA {
      * @return Corba response object
      */
     @Override
-    public CorbaResponse bookRoom(String identifier, String campusName, short roomNumber, String date, String timeslot) {
-        if (campus.equals(this.campus))
+    public synchronized CorbaResponse bookRoom(String identifier, String campusName, short roomNumber, String date, String timeslot) {
+        if (Campus.valueOf(campusName).equals(this.campus))
             return bookRoomOnCampus(identifier, roomNumber, date, timeslot);
         else {
             // Perform action on remote server
@@ -205,10 +206,10 @@ public class RoomReservationImpl extends RoomReservationApp.RoomReservationPOA {
             requestObject.setAction(RequestObjectAction.BookRoom.toString());
             requestObject.setIdentifier(identifier);
             requestObject.setRoomNumber(roomNumber);
-            requestObject.setCampusName(campus.toString());
+            requestObject.setCampusName(campusName);
             requestObject.setDate(date);
             requestObject.setTimeslot(timeslot);
-            return udpTransfer(campus, requestObject.build());
+            return udpTransfer(Campus.valueOf(campusName), requestObject.build());
         }
     }
 
@@ -218,8 +219,7 @@ public class RoomReservationImpl extends RoomReservationApp.RoomReservationPOA {
      * @return Corba response object
      */
     @Override
-    public CorbaResponse getAvailableTimeSlot(String date) {
-        System.out.println("Received request for CAMPUS: " + this.campus);
+    public synchronized CorbaResponse getAvailableTimeSlot(String date) {
         // Build new proto request object
         RequestObject.Builder requestObject = RequestObject.newBuilder();
         requestObject.setAction(RequestObjectAction.GetAvailableTimeslots.toString());
@@ -263,7 +263,7 @@ public class RoomReservationImpl extends RoomReservationApp.RoomReservationPOA {
      * @return Corba response object
      */
     @Override
-    public CorbaResponse cancelBooking(String identifier, String bookingId) {
+    public synchronized CorbaResponse cancelBooking(String identifier, String bookingId) {
         Campus campus = Campus.valueOf(bookingId.split(":")[0]);
         if (campus.equals(this.campus))
             return cancelBookingOnCampus(identifier, bookingId);
@@ -288,7 +288,7 @@ public class RoomReservationImpl extends RoomReservationApp.RoomReservationPOA {
      * @return Corba response object
      */
     @Override
-    public CorbaResponse changeReservation(String identifier, String bookingId, String newCampusName, short newRoomNumber, String newDate, String newTimeslot) {
+    public synchronized CorbaResponse changeReservation(String identifier, String bookingId, String newCampusName, short newRoomNumber, String newDate, String newTimeslot) {
         // Cancel existing booking
         CorbaResponse cancelBooking = cancelBooking(identifier, bookingId);
         String requestParameters = "Booking ID: " + bookingId + " | Campus Name: " + newCampusName + " | Room number: " + newRoomNumber + " | New date: " + newDate + " | Timeslot: " + newTimeslot;
@@ -427,18 +427,18 @@ public class RoomReservationImpl extends RoomReservationApp.RoomReservationPOA {
                         //Increase booking count
                         increaseBookingCounter(identifier, date);
 
-                        lock.lock();
-                        try {
-                            if (timeslotPosition.getElement().getValue() == null){
+                        if (timeslotPosition.getElement().getValue() == null){
+                            databaseLock.lock();
+                            try {
                                 // Create timeslot and add attributes
                                 isBooked = true;
                                 bookingId = this.campus + ":" + UUID.randomUUID();
                                 roomPosition.getElement().getValue().set(timeslotPosition, new Node<>(timeslot, new LinkedPositionalList<>()));
                                 timeslotPosition.getElement().getValue().addFirst(new Node<>("bookingId", bookingId));
                                 timeslotPosition.getElement().getValue().addFirst(new Node<>("studentId", identifier));
+                            } finally {
+                                databaseLock.unlock();
                             }
-                        } finally {
-                            lock.unlock();
                         }
                     } else
                         isOverBookingCountLimit = true;
@@ -493,12 +493,12 @@ public class RoomReservationImpl extends RoomReservationApp.RoomReservationPOA {
                             // Reduce booking count
                             decreaseBookingCounter(identifier, datePosition.getElement().getKey());
 
-                            lock.lock();
+                            databaseLock.lock();
                             try {
                                 // Cancel booking
                                 roomPosition.getElement().getValue().set(timeslotPosition, new Node<>(timeslotPosition.getElement().getKey(), null));
                             } finally {
-                                lock.unlock();
+                                databaseLock.unlock();
                             }
                         }
                     }
@@ -540,35 +540,36 @@ public class RoomReservationImpl extends RoomReservationApp.RoomReservationPOA {
                 if (bookingIdentifier.getElement().getKey().equals(identifier)) {
                     foundIdentifier = true;
                     for (Position<Entry<Date, Integer>> bookingDate: bookingIdentifier.getElement().getValue().positions()){
-                        if (bookingDate.getElement().getKey().equals(tempDate)){
-                            lock.lock();
-                            try {
+                        bookingLock.lock();
+                        try {
+                            if (bookingDate.getElement().getKey().equals(tempDate)){
                                 foundDate = true;
                                 // Increase count
                                 bookingIdentifier.getElement().getValue().set(bookingDate, new Node<>(tempDate, bookingDate.getElement().getValue() + 1));
-                            } finally {
-                                lock.unlock();
                             }
-                        }
-                    }
-                    if (!foundDate){
-                        lock.lock();
-                        try {
-                            bookingIdentifier.getElement().getValue().addFirst(new Node<>(tempDate, 1));
                         } finally {
-                            lock.unlock();
+                            bookingLock.unlock();
                         }
+                    }
+                    bookingLock.lock();
+                    try {
+                        if (!foundDate){
+                            bookingIdentifier.getElement().getValue().addFirst(new Node<>(tempDate, 1));
+                        }
+                    } finally {
+                        bookingLock.unlock();
                     }
                 }
             }
-            if (!foundIdentifier) {
-                lock.lock();
-                try {
+            bookingLock.lock();
+            try {
+                if (!foundIdentifier) {
                     bookingCount.addFirst(new Node<>(identifier, new LinkedPositionalList<>(new Node<>(tempDate, 1))));
-                } finally {
-                    lock.unlock();
                 }
+            } finally {
+                bookingLock.unlock();
             }
+
         } catch (ParseException e) {
             e.printStackTrace();
         }
@@ -585,14 +586,14 @@ public class RoomReservationImpl extends RoomReservationApp.RoomReservationPOA {
             for (Position<Entry<String, LinkedPositionalList<Entry<Date, Integer>>>> bookingIdentifier: bookingCount.positions()){
                 if (bookingIdentifier.getElement().getKey().equals(identifier)) {
                     for (Position<Entry<Date, Integer>> bookingDate: bookingIdentifier.getElement().getValue().positions()){
-                        if (bookingDate.getElement().getKey().equals(tempDate)){
-                            lock.lock();
-                            try {
+                        bookingLock.lock();
+                        try {
+                            if (bookingDate.getElement().getKey().equals(tempDate)){
                                 // Decrease count
                                 bookingIdentifier.getElement().getValue().set(bookingDate, new Node<>(tempDate, bookingDate.getElement().getValue() - 1));
-                            } finally {
-                                lock.unlock();
                             }
+                        } finally {
+                            bookingLock.unlock();
                         }
                     }
                 }
@@ -628,6 +629,9 @@ public class RoomReservationImpl extends RoomReservationApp.RoomReservationPOA {
                 CorbaResponse corbaResponse = new CorbaResponse();
                 corbaResponse.status = false;
                 corbaResponse.message = "Unable to get server details from the central repository";
+                corbaResponse.requestParameters = "";
+                corbaResponse.requestType = "";
+                corbaResponse.date = new SimpleDateFormat("yyyy-MM-dd").format(new Date());
                 return corbaResponse;
             }
         }
@@ -642,6 +646,9 @@ public class RoomReservationImpl extends RoomReservationApp.RoomReservationPOA {
         CorbaResponse corbaResponse = new CorbaResponse();
         corbaResponse.status = false;
         corbaResponse.message = "Unable to connect to remote server";
+        corbaResponse.requestParameters = "";
+        corbaResponse.requestType = "";
+        corbaResponse.date = new SimpleDateFormat("yyyy-MM-dd").format(new Date());
         return corbaResponse;
     }
 
@@ -661,7 +668,7 @@ public class RoomReservationImpl extends RoomReservationApp.RoomReservationPOA {
      * @param date Date
      * @return Date position in database
      */
-    private Position<Entry<String, LinkedPositionalList<Entry<Short, LinkedPositionalList<Entry<String, LinkedPositionalList<Entry<String, String>>>>>>>> findDate(String date){
+    private synchronized Position<Entry<String, LinkedPositionalList<Entry<Short, LinkedPositionalList<Entry<String, LinkedPositionalList<Entry<String, String>>>>>>>> findDate(String date){
         for (Position<Entry<String, LinkedPositionalList<Entry<Short, LinkedPositionalList<Entry<String, LinkedPositionalList<Entry<String, String>>>>>>>> dateNext : database.positions()) {
             if (dateNext.getElement().getKey().equals(date))
                 return dateNext;
@@ -675,7 +682,7 @@ public class RoomReservationImpl extends RoomReservationApp.RoomReservationPOA {
      * @param datePosition Date position object
      * @return Room position in database
      */
-    private Position<Entry<Short, LinkedPositionalList<Entry<String, LinkedPositionalList<Entry<String, String>>>>>> findRoom(short roomNumber, Position<Entry<String, LinkedPositionalList<Entry<Short, LinkedPositionalList<Entry<String, LinkedPositionalList<Entry<String, String>>>>>>>> datePosition){
+    private synchronized Position<Entry<Short, LinkedPositionalList<Entry<String, LinkedPositionalList<Entry<String, String>>>>>> findRoom(short roomNumber, Position<Entry<String, LinkedPositionalList<Entry<Short, LinkedPositionalList<Entry<String, LinkedPositionalList<Entry<String, String>>>>>>>> datePosition){
         for (Position<Entry<Short, LinkedPositionalList<Entry<String, LinkedPositionalList<Entry<String, String>>>>>> roomNext : datePosition.getElement().getValue().positions()) {
             if (roomNext.getElement().getKey().equals(roomNumber))
                 return roomNext;
@@ -689,7 +696,7 @@ public class RoomReservationImpl extends RoomReservationApp.RoomReservationPOA {
      * @param room Room position object
      * @return Timeslot position in database
      */
-    private Position<Entry<String, LinkedPositionalList<Entry<String, String>>>> findTimeslot(String timeslot, Position<Entry<Short, LinkedPositionalList<Entry<String, LinkedPositionalList<Entry<String, String>>>>>> room){
+    private synchronized Position<Entry<String, LinkedPositionalList<Entry<String, String>>>> findTimeslot(String timeslot, Position<Entry<Short, LinkedPositionalList<Entry<String, LinkedPositionalList<Entry<String, String>>>>>> room){
         for (Position<Entry<String, LinkedPositionalList<Entry<String, String>>>> timeslotNext : room.getElement().getValue().positions()) {
             if (timeslotNext.getElement().getKey().equals(timeslot))
                 return timeslotNext;

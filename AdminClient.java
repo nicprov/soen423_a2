@@ -98,7 +98,7 @@ public class AdminClient {
                     case "2":
                         System.out.println("\nDELETE ROOM");
                         System.out.println("-----------");
-                        response = roomReservation.createRoom(Parsing.getRoomNumber(bufferedReader),
+                        response = roomReservation.deleteRoom(Parsing.getRoomNumber(bufferedReader),
                                 Parsing.getDate(bufferedReader), Parsing.getTimeslots(bufferedReader));
                         break;
                     case "3":
