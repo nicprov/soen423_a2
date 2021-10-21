@@ -54,6 +54,13 @@ public class RoomReservationImpl extends RoomReservationApp.RoomReservationPOA {
         this.orb = orb;
     }
 
+    /**
+     * Create Room Corba method
+     * @param roomNumber Campus room number
+     * @param date Date
+     * @param listOfTimeSlots List of timeslots to add
+     * @return Corba Response object
+     */
     @Override
     public CorbaResponse createRoom(short roomNumber, String date, String[] listOfTimeSlots) {
         Position<Entry<String, LinkedPositionalList<Entry<Short, LinkedPositionalList<Entry<String, LinkedPositionalList<Entry<String, String>>>>>>>> datePosition = findDate(date);
@@ -123,6 +130,13 @@ public class RoomReservationImpl extends RoomReservationApp.RoomReservationPOA {
         return corbaResponse;
     }
 
+    /**
+     * Delete room Corba method
+     * @param roomNumber Campus room number
+     * @param date Date
+     * @param listOfTimeSlots List of time slots to remove
+     * @return Corba Response object
+     */
     @Override
     public CorbaResponse deleteRoom(short roomNumber, String date, String[] listOfTimeSlots) {
         Position<Entry<String, LinkedPositionalList<Entry<Short, LinkedPositionalList<Entry<String, LinkedPositionalList<Entry<String, String>>>>>>>> datePosition = findDate(date);
@@ -172,6 +186,15 @@ public class RoomReservationImpl extends RoomReservationApp.RoomReservationPOA {
         return corbaResponse;
     }
 
+    /**
+     * Book Room Corba method
+     * @param identifier User ID (ie. dvls1234)
+     * @param campusName Campus name (ie. dvl, wst, kkl)
+     * @param roomNumber Campus room number
+     * @param date Date
+     * @param timeslot Timeslot to book
+     * @return Corba response object
+     */
     @Override
     public CorbaResponse bookRoom(String identifier, String campusName, short roomNumber, String date, String timeslot) {
         if (campus.equals(this.campus))
@@ -189,6 +212,11 @@ public class RoomReservationImpl extends RoomReservationApp.RoomReservationPOA {
         }
     }
 
+    /**
+     * Get available timeslot Corba method
+     * @param date Date
+     * @return Corba response object
+     */
     @Override
     public CorbaResponse getAvailableTimeSlot(String date) {
         System.out.println("Received request for CAMPUS: " + this.campus);
@@ -228,6 +256,12 @@ public class RoomReservationImpl extends RoomReservationApp.RoomReservationPOA {
         return corbaResponse;
     }
 
+    /**
+     * Cancel booking Corba method
+     * @param identifier User ID (ie. dvls1234)
+     * @param bookingId Booking id
+     * @return Corba response object
+     */
     @Override
     public CorbaResponse cancelBooking(String identifier, String bookingId) {
         Campus campus = Campus.valueOf(bookingId.split(":")[0]);
@@ -243,6 +277,16 @@ public class RoomReservationImpl extends RoomReservationApp.RoomReservationPOA {
         }
     }
 
+    /**
+     * Change reservation Corba method
+     * @param identifier User ID (ie. dvls1234)
+     * @param bookingId Booking ID
+     * @param newCampusName New campus to make reservation on
+     * @param newRoomNumber New room number to make reservation on
+     * @param newDate New date to make reservation on
+     * @param newTimeslot New timeslot to make reservation on
+     * @return Corba response object
+     */
     @Override
     public CorbaResponse changeReservation(String identifier, String bookingId, String newCampusName, short newRoomNumber, String newDate, String newTimeslot) {
         // Cancel existing booking
@@ -274,14 +318,6 @@ public class RoomReservationImpl extends RoomReservationApp.RoomReservationPOA {
     @Override
     public void shutdown() {
         orb.shutdown(true);
-    }
-
-    private Position<Entry<String, LinkedPositionalList<Entry<Short, LinkedPositionalList<Entry<String, LinkedPositionalList<Entry<String, String>>>>>>>> findDate(String date){
-        for (Position<Entry<String, LinkedPositionalList<Entry<Short, LinkedPositionalList<Entry<String, LinkedPositionalList<Entry<String, String>>>>>>>> dateNext : database.positions()) {
-            if (dateNext.getElement().getKey().equals(date))
-                return dateNext;
-        }
-        return null;
     }
 
     /**
@@ -618,6 +654,19 @@ public class RoomReservationImpl extends RoomReservationApp.RoomReservationPOA {
         byte[] data = new byte[packet.getLength()];
         System.arraycopy(packet.getData(), packet.getOffset(), data, 0, packet.getLength());
         return data;
+    }
+
+    /**
+     * Searches database to find position at specific date
+     * @param date Date
+     * @return Date position in database
+     */
+    private Position<Entry<String, LinkedPositionalList<Entry<Short, LinkedPositionalList<Entry<String, LinkedPositionalList<Entry<String, String>>>>>>>> findDate(String date){
+        for (Position<Entry<String, LinkedPositionalList<Entry<Short, LinkedPositionalList<Entry<String, LinkedPositionalList<Entry<String, String>>>>>>>> dateNext : database.positions()) {
+            if (dateNext.getElement().getKey().equals(date))
+                return dateNext;
+        }
+        return null;
     }
 
     /**

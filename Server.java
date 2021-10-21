@@ -234,6 +234,11 @@ public class Server {
         }
     }
 
+    /**
+     * Converts CorbaResponse object to ResponseObject (for UDP transmission)
+     * @param corbaResponse Corba Response object
+     * @return Response object
+     */
     private static ResponseObject toResponseObject(CorbaResponse corbaResponse){
         ResponseObject.Builder responseObject = ResponseObject.newBuilder();
         responseObject.setStatus(corbaResponse.status);
@@ -244,6 +249,13 @@ public class Server {
         return responseObject.build();
     }
 
+    /**
+     * Since ORBD must be started manually, these are the predefined ports Corba
+     * will run on in each campus. These ports are still registered through the central
+     * repository
+     * @param campus Campus name (ie. dvl, wst, kkl)
+     * @return Port number
+     */
     private static int getRemotePort(Campus campus){
         switch (campus){
             case DVL:
