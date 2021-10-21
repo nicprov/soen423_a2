@@ -1,5 +1,5 @@
+import RoomReservationApp.CorbaResponse;
 import common.Campus;
-import RoomReservationApp.RMIResponse;
 import common.CentralRepositoryUtils;
 import protobuf.protos.*;
 import org.omg.CORBA.ORB;
@@ -234,13 +234,13 @@ public class Server {
         }
     }
 
-    private static ResponseObject toResponseObject(RMIResponse rmiResponse){
+    private static ResponseObject toResponseObject(CorbaResponse corbaResponse){
         ResponseObject.Builder responseObject = ResponseObject.newBuilder();
-        responseObject.setStatus(rmiResponse.status);
-        responseObject.setDateTime(rmiResponse.date);
-        responseObject.setMessage(rmiResponse.message);
-        responseObject.setRequestParameters(rmiResponse.requestParameters);
-        responseObject.setRequestType(rmiResponse.requestType);
+        responseObject.setStatus(corbaResponse.status);
+        responseObject.setDateTime(corbaResponse.date);
+        responseObject.setMessage(corbaResponse.message);
+        responseObject.setRequestParameters(corbaResponse.requestParameters);
+        responseObject.setRequestType(corbaResponse.requestType);
         return responseObject.build();
     }
 

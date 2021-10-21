@@ -4,7 +4,6 @@ import collection.Position;
 import collection.LinkedPositionalList;
 import protobuf.protos.CentralRepository;
 import protobuf.protos.CentralRepositoryAction;
-
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;

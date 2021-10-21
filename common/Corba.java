@@ -9,6 +9,13 @@ import static common.ConsoleColours.ANSI_RED;
 import static common.ConsoleColours.RESET;
 
 public class Corba {
+
+    /**
+     * Connects to remote Corba instance by using the campus as a reference.
+     * This reference is then matched with a port through the central repository
+     * @param campus Campus name
+     * @return Corba object reference
+     */
     public static RoomReservationApp.RoomReservation connectCorba(String campus) {
         try {
             CentralRepository centralRepository = CentralRepositoryUtils.lookupServer(campus, "corba");

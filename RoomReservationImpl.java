@@ -1,5 +1,5 @@
+import RoomReservationApp.CorbaResponse;
 import common.Campus;
-import RoomReservationApp.RMIResponse;
 import collection.Entry;
 import collection.LinkedPositionalList;
 import collection.Node;
@@ -12,13 +12,11 @@ import protobuf.protos.CentralRepository;
 import protobuf.protos.RequestObject;
 import protobuf.protos.RequestObjectAction;
 import protobuf.protos.ResponseObject;
-
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
-import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
@@ -57,7 +55,7 @@ public class RoomReservationImpl extends RoomReservationApp.RoomReservationPOA {
     }
 
     @Override
-    public RMIResponse createRoom(short roomNumber, String date, String[] listOfTimeSlots) {
+    public CorbaResponse createRoom(short roomNumber, String date, String[] listOfTimeSlots) {
         Position<Entry<String, LinkedPositionalList<Entry<Short, LinkedPositionalList<Entry<String, LinkedPositionalList<Entry<String, String>>>>>>>> datePosition = findDate(date);
         boolean timeSlotCreated = false;
         boolean roomExist = false;
@@ -105,28 +103,28 @@ public class RoomReservationImpl extends RoomReservationApp.RoomReservationPOA {
                 }
             }
         }
-        RMIResponse rmiResponse = new RMIResponse();
+        CorbaResponse corbaResponse = new CorbaResponse();
         if (!roomExist) {
-            rmiResponse.message = "Created room (" + roomNumber + ")";
-            rmiResponse.status = true;
+            corbaResponse.message = "Created room (" + roomNumber + ")";
+            corbaResponse.status = true;
         } else if (!timeSlotCreated){
-            rmiResponse.message = "Room already exist with specified timeslots";
-            rmiResponse.status = false;
+            corbaResponse.message = "Room already exist with specified timeslots";
+            corbaResponse.status = false;
         } else {
-            rmiResponse.message = "Added timeslots to room (" + roomNumber + ")";
-            rmiResponse.status = true;
+            corbaResponse.message = "Added timeslots to room (" + roomNumber + ")";
+            corbaResponse.status = true;
         }
-        rmiResponse.date = new SimpleDateFormat("yyyy-MM-dd").format(new Date());
-        rmiResponse.requestType = RequestObjectAction.CreateRoom.toString();
-        rmiResponse.requestParameters = "Room number: " + roomNumber + " | Date: " + date + " | List of Timeslots: " + arrayToString(listOfTimeSlots);
+        corbaResponse.date = new SimpleDateFormat("yyyy-MM-dd").format(new Date());
+        corbaResponse.requestType = RequestObjectAction.CreateRoom.toString();
+        corbaResponse.requestParameters = "Room number: " + roomNumber + " | Date: " + date + " | List of Timeslots: " + arrayToString(listOfTimeSlots);
         try {
-            Logger.log(logFilePath, rmiResponse);
+            Logger.log(logFilePath, corbaResponse);
         } catch (IOException ignored) {}
-        return rmiResponse;
+        return corbaResponse;
     }
 
     @Override
-    public RMIResponse deleteRoom(short roomNumber, String date, String[] listOfTimeSlots) {
+    public CorbaResponse deleteRoom(short roomNumber, String date, String[] listOfTimeSlots) {
         Position<Entry<String, LinkedPositionalList<Entry<Short, LinkedPositionalList<Entry<String, LinkedPositionalList<Entry<String, String>>>>>>>> datePosition = findDate(date);
         boolean timeslotExist = false;
         if (datePosition != null){
@@ -157,25 +155,25 @@ public class RoomReservationImpl extends RoomReservationApp.RoomReservationPOA {
                 }
             }
         }
-        RMIResponse rmiResponse = new RMIResponse();
+        CorbaResponse corbaResponse = new CorbaResponse();
         if (!timeslotExist){
-            rmiResponse.message = "No timeslots to delete on (" + date + ")";
-            rmiResponse.status = false;
+            corbaResponse.message = "No timeslots to delete on (" + date + ")";
+            corbaResponse.status = false;
         } else {
-            rmiResponse.message = "Removed timeslots from room (" + roomNumber + ")";
-            rmiResponse.status = true;
+            corbaResponse.message = "Removed timeslots from room (" + roomNumber + ")";
+            corbaResponse.status = true;
         }
-        rmiResponse.date = new SimpleDateFormat("yyyy-MM-dd").format(new Date());
-        rmiResponse.requestType = RequestObjectAction.CreateRoom.toString();
-        rmiResponse.requestParameters = "Room number: " + roomNumber + " | Date: " + date + " | List of Timeslots: " + arrayToString(listOfTimeSlots);
+        corbaResponse.date = new SimpleDateFormat("yyyy-MM-dd").format(new Date());
+        corbaResponse.requestType = RequestObjectAction.CreateRoom.toString();
+        corbaResponse.requestParameters = "Room number: " + roomNumber + " | Date: " + date + " | List of Timeslots: " + arrayToString(listOfTimeSlots);
         try {
-            Logger.log(logFilePath, rmiResponse);
+            Logger.log(logFilePath, corbaResponse);
         } catch (IOException ignored) {}
-        return rmiResponse;
+        return corbaResponse;
     }
 
     @Override
-    public RMIResponse bookRoom(String identifier, String campusName, short roomNumber, String date, String timeslot) {
+    public CorbaResponse bookRoom(String identifier, String campusName, short roomNumber, String date, String timeslot) {
         if (campus.equals(this.campus))
             return bookRoomOnCampus(identifier, roomNumber, date, timeslot);
         else {
@@ -192,7 +190,7 @@ public class RoomReservationImpl extends RoomReservationApp.RoomReservationPOA {
     }
 
     @Override
-    public RMIResponse getAvailableTimeSlot(String date) {
+    public CorbaResponse getAvailableTimeSlot(String date) {
         System.out.println("Received request for CAMPUS: " + this.campus);
         // Build new proto request object
         RequestObject.Builder requestObject = RequestObject.newBuilder();
@@ -200,9 +198,9 @@ public class RoomReservationImpl extends RoomReservationApp.RoomReservationPOA {
         requestObject.setDate(date);
 
         // Get response object from each campus
-        RMIResponse dvlTimeslots = udpTransfer(Campus.DVL, requestObject.build());
-        RMIResponse kklTimeslots = udpTransfer(Campus.KKL, requestObject.build());
-        RMIResponse wstTimeslots = udpTransfer(Campus.WST, requestObject.build());
+        CorbaResponse dvlTimeslots = udpTransfer(Campus.DVL, requestObject.build());
+        CorbaResponse kklTimeslots = udpTransfer(Campus.KKL, requestObject.build());
+        CorbaResponse wstTimeslots = udpTransfer(Campus.WST, requestObject.build());
         String message = "";
         if (dvlTimeslots.status)
             message += "DVL " + dvlTimeslots.message + " ";
@@ -218,20 +216,20 @@ public class RoomReservationImpl extends RoomReservationApp.RoomReservationPOA {
             message += "WST (no response from server)";
 
         //  Create response object for rmi
-        RMIResponse rmiResponse = new RMIResponse();
-        rmiResponse.message = message;
-        rmiResponse.date = new SimpleDateFormat("yyyy-MM-dd").format(new Date());
-        rmiResponse.requestType = RequestObjectAction.GetAvailableTimeslots.toString();
-        rmiResponse.requestParameters = "Date: " + date;
-        rmiResponse.status = true;
+        CorbaResponse corbaResponse = new CorbaResponse();
+        corbaResponse.message = message;
+        corbaResponse.date = new SimpleDateFormat("yyyy-MM-dd").format(new Date());
+        corbaResponse.requestType = RequestObjectAction.GetAvailableTimeslots.toString();
+        corbaResponse.requestParameters = "Date: " + date;
+        corbaResponse.status = true;
         try {
-            Logger.log(logFilePath, rmiResponse);
+            Logger.log(logFilePath, corbaResponse);
         } catch (IOException ignored) {}
-        return rmiResponse;
+        return corbaResponse;
     }
 
     @Override
-    public RMIResponse cancelBooking(String identifier, String bookingId) {
+    public CorbaResponse cancelBooking(String identifier, String bookingId) {
         Campus campus = Campus.valueOf(bookingId.split(":")[0]);
         if (campus.equals(this.campus))
             return cancelBookingOnCampus(identifier, bookingId);
@@ -246,15 +244,15 @@ public class RoomReservationImpl extends RoomReservationApp.RoomReservationPOA {
     }
 
     @Override
-    public RMIResponse changeReservation(String identifier, String bookingId, String newCampusName, short newRoomNumber, String newDate, String newTimeslot) {
+    public CorbaResponse changeReservation(String identifier, String bookingId, String newCampusName, short newRoomNumber, String newDate, String newTimeslot) {
         // Cancel existing booking
-        RMIResponse cancelBooking = cancelBooking(identifier, bookingId);
+        CorbaResponse cancelBooking = cancelBooking(identifier, bookingId);
         String requestParameters = "Booking ID: " + bookingId + " | Campus Name: " + newCampusName + " | Room number: " + newRoomNumber + " | New date: " + newDate + " | Timeslot: " + newTimeslot;
         if (cancelBooking.status){
             // Create new booking
-            RMIResponse createBooking = bookRoom(identifier, newCampusName, newRoomNumber, newDate, newTimeslot);
+            CorbaResponse createBooking = bookRoom(identifier, newCampusName, newRoomNumber, newDate, newTimeslot);
             if (createBooking.status){
-                RMIResponse response = new RMIResponse();
+                CorbaResponse response = new CorbaResponse();
                 response.requestType = RequestObjectAction.ChangeReservation.toString();
                 response.requestParameters = requestParameters;
                 response.status = true;
@@ -291,7 +289,7 @@ public class RoomReservationImpl extends RoomReservationApp.RoomReservationPOA {
      * @param date Date
      * @return RMI response object
      */
-    public RMIResponse getAvailableTimeSlotOnCampus(String date) {
+    public CorbaResponse getAvailableTimeSlotOnCampus(String date) {
         int counter = 0;
         for (Position<Entry<String, LinkedPositionalList<Entry<Short, LinkedPositionalList<Entry<String, LinkedPositionalList<Entry<String, String>>>>>>>> dateNext : database.positions()) {
             for (Position<Entry<Short, LinkedPositionalList<Entry<String, LinkedPositionalList<Entry<String, String>>>>>> roomNext : dateNext.getElement().getValue().positions()) {
@@ -301,16 +299,16 @@ public class RoomReservationImpl extends RoomReservationApp.RoomReservationPOA {
                 }
             }
         }
-        RMIResponse rmiResponse = new RMIResponse();
-        rmiResponse.message = Integer.toString(counter);
-        rmiResponse.date = new SimpleDateFormat("yyyy-MM-dd").format(new Date());
-        rmiResponse.requestType = RequestObjectAction.GetAvailableTimeslots.toString();
-        rmiResponse.requestParameters = "Date: " + date;
-        rmiResponse.status = true;
+        CorbaResponse corbaResponse = new CorbaResponse();
+        corbaResponse.message = Integer.toString(counter);
+        corbaResponse.date = new SimpleDateFormat("yyyy-MM-dd").format(new Date());
+        corbaResponse.requestType = RequestObjectAction.GetAvailableTimeslots.toString();
+        corbaResponse.requestParameters = "Date: " + date;
+        corbaResponse.status = true;
         try {
-            Logger.log(logFilePath, rmiResponse);
+            Logger.log(logFilePath, corbaResponse);
         } catch (IOException ignored) {}
-        return rmiResponse;
+        return corbaResponse;
     }
 
     /**
@@ -319,7 +317,7 @@ public class RoomReservationImpl extends RoomReservationApp.RoomReservationPOA {
      * @param date Date
      * @return RMI response object
      */
-    public RMIResponse getBookingCount(String identifier, Date date) {
+    public CorbaResponse getBookingCount(String identifier, Date date) {
         int counter = 0;
         LocalDate tempDate = date.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
         for (Position<Entry<String, LinkedPositionalList<Entry<Date, Integer>>>> bookingIdentifier: bookingCount.positions()){
@@ -334,16 +332,16 @@ public class RoomReservationImpl extends RoomReservationApp.RoomReservationPOA {
                 }
             }
         }
-        RMIResponse rmiResponse = new RMIResponse();
-        rmiResponse.status = true;
-        rmiResponse.message = Integer.toString(counter);
-        rmiResponse.date = new SimpleDateFormat("yyyy-MM-dd").format(new Date());
-        rmiResponse.requestType = RequestObjectAction.CreateRoom.toString();
-        rmiResponse.requestParameters = "Identifier: " + identifier + " | Date: " + new SimpleDateFormat("yyyy-MM-dd").format(date);
+        CorbaResponse corbaResponse = new CorbaResponse();
+        corbaResponse.status = true;
+        corbaResponse.message = Integer.toString(counter);
+        corbaResponse.date = new SimpleDateFormat("yyyy-MM-dd").format(new Date());
+        corbaResponse.requestType = RequestObjectAction.CreateRoom.toString();
+        corbaResponse.requestParameters = "Identifier: " + identifier + " | Date: " + new SimpleDateFormat("yyyy-MM-dd").format(date);
         try {
-            Logger.log(logFilePath, rmiResponse);
+            Logger.log(logFilePath, corbaResponse);
         } catch (IOException ignored) {}
-        return rmiResponse;
+        return corbaResponse;
     }
 
     /**
@@ -354,7 +352,7 @@ public class RoomReservationImpl extends RoomReservationApp.RoomReservationPOA {
      * @param timeslot Timeslot
      * @return RMI response object
      */
-    private RMIResponse bookRoomOnCampus(String identifier, short roomNumber, String date, String timeslot) {
+    private CorbaResponse bookRoomOnCampus(String identifier, short roomNumber, String date, String timeslot) {
         boolean isOverBookingCountLimit = false;
         boolean timeslotExist = false;
         boolean isBooked = false;
@@ -376,9 +374,9 @@ public class RoomReservationImpl extends RoomReservationApp.RoomReservationPOA {
                     requestBookingCount.setIdentifier(identifier);
                     requestBookingCount.setDate(date);
                     requestBookingCount.setAction(RequestObjectAction.GetBookingCount.toString());
-                    RMIResponse dvlBookingCount = udpTransfer(Campus.DVL, requestBookingCount.build());
-                    RMIResponse kklBookingCount = udpTransfer(Campus.KKL, requestBookingCount.build());
-                    RMIResponse wstBookingCount = udpTransfer(Campus.WST, requestBookingCount.build());
+                    CorbaResponse dvlBookingCount = udpTransfer(Campus.DVL, requestBookingCount.build());
+                    CorbaResponse kklBookingCount = udpTransfer(Campus.KKL, requestBookingCount.build());
+                    CorbaResponse wstBookingCount = udpTransfer(Campus.WST, requestBookingCount.build());
 
                     int totalBookingCount = 0;
                     if (dvlBookingCount.status)
@@ -411,27 +409,27 @@ public class RoomReservationImpl extends RoomReservationApp.RoomReservationPOA {
                 }
             }
         }
-        RMIResponse rmiResponse = new RMIResponse();
+        CorbaResponse corbaResponse = new CorbaResponse();
         if (!timeslotExist){
-            rmiResponse.message = "Timeslot (" + timeslot + ") does not exist on (" + date + ")";
-            rmiResponse.status = false;
+            corbaResponse.message = "Timeslot (" + timeslot + ") does not exist on (" + date + ")";
+            corbaResponse.status = false;
         } else if (isOverBookingCountLimit) {
-            rmiResponse.message = "Unable to book room, maximum booking limit is reached";
-            rmiResponse.status = false;
+            corbaResponse.message = "Unable to book room, maximum booking limit is reached";
+            corbaResponse.status = false;
         } else if (isBooked){
-            rmiResponse.message = "Timeslot (" + timeslot + ") on (" + date + ") has been booked | Booking ID: " + bookingId;
-            rmiResponse.status = true;
+            corbaResponse.message = "Timeslot (" + timeslot + ") on (" + date + ") has been booked | Booking ID: " + bookingId;
+            corbaResponse.status = true;
         } else {
-            rmiResponse.message = "Unable to book room, timeslot (" + timeslot + ") has already booked";
-            rmiResponse.status = false;
+            corbaResponse.message = "Unable to book room, timeslot (" + timeslot + ") has already booked";
+            corbaResponse.status = false;
         }
-        rmiResponse.date = new SimpleDateFormat("yyyy-MM-dd").format(new Date());
-        rmiResponse.requestType = RequestObjectAction.CreateRoom.toString();
-        rmiResponse.requestParameters = "Identifier: " + identifier + " | Room Number: " + roomNumber + " | Date: " + date + " | Timeslot: " + timeslot;
+        corbaResponse.date = new SimpleDateFormat("yyyy-MM-dd").format(new Date());
+        corbaResponse.requestType = RequestObjectAction.CreateRoom.toString();
+        corbaResponse.requestParameters = "Identifier: " + identifier + " | Room Number: " + roomNumber + " | Date: " + date + " | Timeslot: " + timeslot;
         try {
-            Logger.log(logFilePath, rmiResponse);
+            Logger.log(logFilePath, corbaResponse);
         } catch (IOException ignored) {}
-        return rmiResponse;
+        return corbaResponse;
     }
 
     /**
@@ -440,7 +438,7 @@ public class RoomReservationImpl extends RoomReservationApp.RoomReservationPOA {
      * @param bookingId Booking id
      * @return RMI response object
      */
-    private RMIResponse cancelBookingOnCampus(String identifier, String bookingId) {
+    private CorbaResponse cancelBookingOnCampus(String identifier, String bookingId) {
         boolean bookingExist = false;
         boolean studentIdMatched = false;
         for (Position<Entry<String, LinkedPositionalList<Entry<Short, LinkedPositionalList<Entry<String, LinkedPositionalList<Entry<String, String>>>>>>>> datePosition : database.positions()) {
@@ -471,25 +469,25 @@ public class RoomReservationImpl extends RoomReservationApp.RoomReservationPOA {
                 }
             }
         }
-        RMIResponse rmiResponse = new RMIResponse();
+        CorbaResponse corbaResponse = new CorbaResponse();
         if (!bookingExist){
-            rmiResponse.message = "Booking (" + bookingId + ") does not exist";
-            rmiResponse.status = false;
+            corbaResponse.message = "Booking (" + bookingId + ") does not exist";
+            corbaResponse.status = false;
         } else if (!studentIdMatched) {
-            rmiResponse.message = "Booking (" + bookingId + ") is reserved to another student";
-            rmiResponse.status = false;
+            corbaResponse.message = "Booking (" + bookingId + ") is reserved to another student";
+            corbaResponse.status = false;
         } else {
-            rmiResponse.message = "Cancelled booking (" + bookingId + ")";
-            rmiResponse.status = true;
+            corbaResponse.message = "Cancelled booking (" + bookingId + ")";
+            corbaResponse.status = true;
         }
 
-        rmiResponse.date = new SimpleDateFormat("yyyy-MM-dd").format(new Date());
-        rmiResponse.requestType = RequestObjectAction.CreateRoom.toString();
-        rmiResponse.requestParameters = "Booking Id: " + bookingId;
+        corbaResponse.date = new SimpleDateFormat("yyyy-MM-dd").format(new Date());
+        corbaResponse.requestType = RequestObjectAction.CreateRoom.toString();
+        corbaResponse.requestParameters = "Booking Id: " + bookingId;
         try {
-            Logger.log(logFilePath, rmiResponse);
+            Logger.log(logFilePath, corbaResponse);
         } catch (IOException ignored) {}
-        return rmiResponse;
+        return corbaResponse;
     }
 
     /**
@@ -574,7 +572,7 @@ public class RoomReservationImpl extends RoomReservationApp.RoomReservationPOA {
      * @param requestObject Request Object
      * @return RMI response object
      */
-    private RMIResponse udpTransfer(Campus campus, RequestObject requestObject){
+    private CorbaResponse udpTransfer(Campus campus, RequestObject requestObject){
         DatagramSocket datagramSocket = null;
         try {
             datagramSocket = new DatagramSocket();
@@ -591,10 +589,10 @@ public class RoomReservationImpl extends RoomReservationApp.RoomReservationPOA {
                 return fromResponseObject(ResponseObject.parseFrom(trim(reply)));
             } else {
                 System.out.println(ANSI_RED + "Unable to get server details from the central repository" + RESET);
-                RMIResponse rmiResponse = new RMIResponse();
-                rmiResponse.status = false;
-                rmiResponse.message = "Unable to get server details from the central repository";
-                return rmiResponse;
+                CorbaResponse corbaResponse = new CorbaResponse();
+                corbaResponse.status = false;
+                corbaResponse.message = "Unable to get server details from the central repository";
+                return corbaResponse;
             }
         }
         catch (SocketException e){
@@ -605,10 +603,10 @@ public class RoomReservationImpl extends RoomReservationApp.RoomReservationPOA {
             if (datagramSocket != null)
                 datagramSocket.close();
         }
-        RMIResponse rmiResponse = new RMIResponse();
-        rmiResponse.status = false;
-        rmiResponse.message = "Unable to connect to remote server";
-        return rmiResponse;
+        CorbaResponse corbaResponse = new CorbaResponse();
+        corbaResponse.status = false;
+        corbaResponse.message = "Unable to connect to remote server";
+        return corbaResponse;
     }
 
     /**
@@ -650,14 +648,14 @@ public class RoomReservationImpl extends RoomReservationApp.RoomReservationPOA {
         return null;
     }
 
-    private RMIResponse fromResponseObject(ResponseObject responseObject){
-        RMIResponse rmiResponse = new RMIResponse();
-        rmiResponse.message = responseObject.getMessage();
-        rmiResponse.status = responseObject.getStatus();
-        rmiResponse.requestParameters = responseObject.getRequestParameters();
-        rmiResponse.requestType = responseObject.getRequestType();
-        rmiResponse.date = responseObject.getDateTime();
-        return rmiResponse;
+    private CorbaResponse fromResponseObject(ResponseObject responseObject){
+        CorbaResponse corbaResponse = new CorbaResponse();
+        corbaResponse.message = responseObject.getMessage();
+        corbaResponse.status = responseObject.getStatus();
+        corbaResponse.requestParameters = responseObject.getRequestParameters();
+        corbaResponse.requestType = responseObject.getRequestType();
+        corbaResponse.date = responseObject.getDateTime();
+        return corbaResponse;
     }
 
     private String arrayToString(String[] array){

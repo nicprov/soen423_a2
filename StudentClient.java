@@ -1,6 +1,5 @@
-import RoomReservationApp.RMIResponse;
+import RoomReservationApp.CorbaResponse;
 import common.*;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -88,7 +87,7 @@ public class StudentClient {
         while (true) {
             String action = listAndGetActions(bufferedReader);
             try {
-                RMIResponse response = null;
+                CorbaResponse response = null;
                 switch (action) {
                     case "1":
                         System.out.println("\nBOOK ROOM");

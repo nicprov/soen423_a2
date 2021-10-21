@@ -1,6 +1,6 @@
 package common;
 
-import RoomReservationApp.RMIResponse;
+import RoomReservationApp.CorbaResponse;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -24,16 +24,21 @@ public class Logger {
     /**
      * Adds entry in log file
      * @param logFilePath Logger file path
-     * @param rmiResponse RMI Response object
+     * @param corbaResponse CorbaResponse object
      * @throws IOException Exception
      */
-    public static void log(String logFilePath, RMIResponse rmiResponse) throws IOException {
+    public static void log(String logFilePath, CorbaResponse corbaResponse) throws IOException {
         FileWriter fileWriter = new FileWriter(logFilePath, true);
-        fileWriter.append(toString(rmiResponse)).append("\n");
+        fileWriter.append(toString(corbaResponse)).append("\n");
         fileWriter.close();
     }
 
-    private static String toString(RMIResponse rmiResponse){
-        return rmiResponse.date + "," + rmiResponse.message + "," + rmiResponse.requestType + "," + rmiResponse.requestParameters + "," + rmiResponse.status;
+    /**
+     * Converts Corba RMIResponse object to an appropriate string for the logger
+     * @param corbaResponse CorbaResponse object
+     * @return
+     */
+    private static String toString(CorbaResponse corbaResponse){
+        return corbaResponse.date + "," + corbaResponse.message + "," + corbaResponse.requestType + "," + corbaResponse.requestParameters + "," + corbaResponse.status;
     }
 }

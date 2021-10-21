@@ -1,5 +1,5 @@
 module RoomReservationApp{
-    struct RMIResponse {
+    struct CorbaResponse {
         string message;
         string date;
         string requestType;
@@ -9,14 +9,14 @@ module RoomReservationApp{
     typedef sequence <string> listOfTimeSlots;
     interface RoomReservation{
         /* Admin role */
-        RMIResponse createRoom(in short roomNumber, in string date, in listOfTimeSlots timeslots);
-        RMIResponse deleteRoom(in short roomNumber, in string date, in listOfTimeSlots timeslots);
+        CorbaResponse createRoom(in short roomNumber, in string date, in listOfTimeSlots timeslots);
+        CorbaResponse deleteRoom(in short roomNumber, in string date, in listOfTimeSlots timeslots);
 
         /* Student role */
-        RMIResponse bookRoom(in string identifier, in string campusName, in short roomNumber, in string date, in string timeslot);
-        RMIResponse getAvailableTimeSlot(in string date);
-        RMIResponse cancelBooking(in string identifier, in string bookingId);
-        RMIResponse changeReservation(in string identifier, in string bookingId, in string newCampusName, in short newRoomNumber, in string newDate, in string newTimeslot);
+        CorbaResponse bookRoom(in string identifier, in string campusName, in short roomNumber, in string date, in string timeslot);
+        CorbaResponse getAvailableTimeSlot(in string date);
+        CorbaResponse cancelBooking(in string identifier, in string bookingId);
+        CorbaResponse changeReservation(in string identifier, in string bookingId, in string newCampusName, in short newRoomNumber, in string newDate, in string newTimeslot);
         oneway void shutdown();
     };
 };

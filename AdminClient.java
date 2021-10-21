@@ -1,11 +1,11 @@
-import RoomReservationApp.RMIResponse;
+
+import RoomReservationApp.CorbaResponse;
 import common.Corba;
 import common.Logger;
 import common.Parsing;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.net.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import static common.ConsoleColours.*;
@@ -87,7 +87,7 @@ public class AdminClient {
         while (true) {
             String action = listAndGetActions(bufferedReader);
             try {
-                RMIResponse response = null;
+                CorbaResponse response = null;
                 switch (action){
                     case "1":
                         System.out.println("\nCREATE ROOM");
